@@ -11,31 +11,24 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IActivityLogService _activityLogService;
 
-        public RoleService(IUnitOfWork unitOfWork, IMapper mapper)
+        public RoleService(IUnitOfWork unitOfWork, IMapper mapper, IActivityLogService activityLogService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _activityLogService = activityLogService;
         }
 
-        public async Task<IEnumerable<RoleResponseDto>> GetAllRolesAsync()
-        {
-            var roles = await _unitOfWork.Roles.GetAllRolesAsync();
-            return _mapper.Map<IEnumerable<RoleResponseDto>>(roles);
-        }
-
-        public async Task<RoleResponseDto?> GetRoleByIdAsync(int id)
-        {
-            var role = await _unitOfWork.Roles.GetRoleByIdAsync(id);
-            if (role == null) return null;
-            return _mapper.Map<RoleResponseDto>(role);
-        }
+        public async Task<IEnumerable<RoleResponseDto>> GetAllRolesAsync() => _mapper.Map<IEnumerable<RoleResponseDto>>(await _unitOfWork.Roles.GetAllRolesAsync());
+        public async Task<RoleResponseDto?> GetRoleByIdAsync(int id) => _mapper.Map<RoleResponseDto>(await _unitOfWork.Roles.GetRoleByIdAsync(id));
 
         public async Task<RoleResponseDto> CreateRoleAsync(RoleRequestDto roleDto)
         {
             var role = _mapper.Map<Role>(roleDto);
             await _unitOfWork.Roles.AddRoleAsync(role);
             await _unitOfWork.CompleteAsync();
+            await _activityLogService.LogActivityAsync("إضافة", "دور", role.Id, $"تم إضافة دور جديد: {role.RoleName}", null);
             return _mapper.Map<RoleResponseDto>(role);
         }
 
@@ -43,10 +36,10 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
         {
             var role = await _unitOfWork.Roles.GetRoleByIdAsync(id);
             if (role == null) return false;
-
             _mapper.Map(roleDto, role);
             _unitOfWork.Roles.UpdateRole(role);
             await _unitOfWork.CompleteAsync();
+            await _activityLogService.LogActivityAsync("تعديل", "دور", id, $"تم تعديل الدور: {role.RoleName}", null);
             return true;
         }
 
@@ -54,10 +47,10 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
         {
             var role = await _unitOfWork.Roles.GetRoleByIdAsync(id);
             if (role == null) return false;
-
             role.IsDeleted = true;
             _unitOfWork.Roles.UpdateRole(role);
             await _unitOfWork.CompleteAsync();
+            await _activityLogService.LogActivityAsync("حذف", "دور", id, $"تم حذف الدور: {role.RoleName}", null);
             return true;
         }
     }

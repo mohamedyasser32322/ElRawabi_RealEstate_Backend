@@ -11,31 +11,24 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IActivityLogService _activityLogService;
 
-        public ConstructionStageService(IUnitOfWork unitOfWork, IMapper mapper)
+        public ConstructionStageService(IUnitOfWork unitOfWork, IMapper mapper, IActivityLogService activityLogService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _activityLogService = activityLogService;
         }
 
-        public async Task<IEnumerable<ConstructionStageResponseDto>> GetAllConstructionStagesAsync()
-        {
-            var stages = await _unitOfWork.ConstructionStages.GetAllConstructionStagesAsync();
-            return _mapper.Map<IEnumerable<ConstructionStageResponseDto>>(stages);
-        }
-
-        public async Task<ConstructionStageResponseDto?> GetConstructionStageByIdAsync(int id)
-        {
-            var stage = await _unitOfWork.ConstructionStages.GetConstructionStageByIdAsync(id);
-            if (stage == null) return null;
-            return _mapper.Map<ConstructionStageResponseDto>(stage);
-        }
+        public async Task<IEnumerable<ConstructionStageResponseDto>> GetAllConstructionStagesAsync() => _mapper.Map<IEnumerable<ConstructionStageResponseDto>>(await _unitOfWork.ConstructionStages.GetAllConstructionStagesAsync());
+        public async Task<ConstructionStageResponseDto?> GetConstructionStageByIdAsync(int id) => _mapper.Map<ConstructionStageResponseDto>(await _unitOfWork.ConstructionStages.GetConstructionStageByIdAsync(id));
 
         public async Task<ConstructionStageResponseDto> CreateConstructionStageAsync(ConstructionStageRequestDto stageDto)
         {
             var stage = _mapper.Map<ConstructionStage>(stageDto);
             await _unitOfWork.ConstructionStages.AddConstructionStageAsync(stage);
             await _unitOfWork.CompleteAsync();
+            await _activityLogService.LogActivityAsync("إضافة", "مرحلة بناء", stage.Id, $"تم إضافة مرحلة: {stage.StageName}", null);
             return _mapper.Map<ConstructionStageResponseDto>(stage);
         }
 
@@ -43,10 +36,10 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
         {
             var stage = await _unitOfWork.ConstructionStages.GetConstructionStageByIdAsync(id);
             if (stage == null) return false;
-
             _mapper.Map(stageDto, stage);
             _unitOfWork.ConstructionStages.UpdateConstructionStage(stage);
             await _unitOfWork.CompleteAsync();
+            await _activityLogService.LogActivityAsync("تعديل", "مرحلة بناء", id, $"تم تعديل مرحلة: {stage.StageName}", null);
             return true;
         }
 
@@ -54,10 +47,10 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
         {
             var stage = await _unitOfWork.ConstructionStages.GetConstructionStageByIdAsync(id);
             if (stage == null) return false;
-
             stage.IsDeleted = true;
             _unitOfWork.ConstructionStages.UpdateConstructionStage(stage);
             await _unitOfWork.CompleteAsync();
+            await _activityLogService.LogActivityAsync("حذف", "مرحلة بناء", id, $"تم حذف مرحلة: {stage.StageName}", null);
             return true;
         }
     }

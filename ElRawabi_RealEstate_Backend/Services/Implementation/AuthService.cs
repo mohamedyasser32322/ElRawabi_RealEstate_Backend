@@ -19,12 +19,9 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
         public async Task<AuthResponseDto?> LoginUserAsync(LoginRequestDto loginDto)
         {
             var user = await _unitOfWork.Users.GetUserByEmailAsync(loginDto.Email);
+            if (user == null || user.IsDeleted || !user.IsActive) return null;
 
-            if (user == null || user.IsDeleted || !user.IsActive)
-                return null;
-
-            if (!PasswordHelper.VerifyPassword(loginDto.Password, user.HashPassword))
-                return null;
+            if (!PasswordHelper.VerifyPassword(loginDto.Password, user.HashPassword)) return null;
 
             var role = await _unitOfWork.Roles.GetRoleByIdAsync(user.RoleId);
             var roleName = role?.RoleName ?? "User";
@@ -43,12 +40,10 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
         public async Task<AuthResponseDto?> LoginBuyerAsync(LoginRequestDto loginDto)
         {
             var buyer = await _unitOfWork.Buyers.GetBuyerByEmailAsync(loginDto.Email);
+            if (buyer == null || buyer.IsDeleted) return null;
 
-            if (buyer == null || buyer.IsDeleted)
-                return null;
-
-            if (!PasswordHelper.VerifyPassword(loginDto.Password, buyer.HashPassword))
-                return null;
+   
+            if (!PasswordHelper.VerifyPassword(loginDto.Password, buyer.HashPassword)) return null;
 
             var token = JwtHelper.GenerateToken(buyer.Id, buyer.Email, "Buyer", _configuration);
 

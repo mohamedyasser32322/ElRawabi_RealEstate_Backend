@@ -11,31 +11,24 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IActivityLogService _activityLogService;
 
-        public FloorService(IUnitOfWork unitOfWork, IMapper mapper)
+        public FloorService(IUnitOfWork unitOfWork, IMapper mapper, IActivityLogService activityLogService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _activityLogService = activityLogService;
         }
 
-        public async Task<IEnumerable<FloorResponseDto>> GetAllFloorsAsync()
-        {
-            var floors = await _unitOfWork.Floors.GetAllFloorsAsync();
-            return _mapper.Map<IEnumerable<FloorResponseDto>>(floors);
-        }
-
-        public async Task<FloorResponseDto?> GetFloorByIdAsync(int id)
-        {
-            var floor = await _unitOfWork.Floors.GetFloorByIdAsync(id);
-            if (floor == null) return null;
-            return _mapper.Map<FloorResponseDto>(floor);
-        }
+        public async Task<IEnumerable<FloorResponseDto>> GetAllFloorsAsync() => _mapper.Map<IEnumerable<FloorResponseDto>>(await _unitOfWork.Floors.GetAllFloorsAsync());
+        public async Task<FloorResponseDto?> GetFloorByIdAsync(int id) => _mapper.Map<FloorResponseDto>(await _unitOfWork.Floors.GetFloorByIdAsync(id));
 
         public async Task<FloorResponseDto> CreateFloorAsync(FloorRequestDto floorDto)
         {
             var floor = _mapper.Map<Floor>(floorDto);
             await _unitOfWork.Floors.AddFloorAsync(floor);
             await _unitOfWork.CompleteAsync();
+            await _activityLogService.LogActivityAsync("إضافة", "دور", floor.Id, $"تم إضافة دور رقم {floor.FloorNumber}", null);
             return _mapper.Map<FloorResponseDto>(floor);
         }
 
@@ -43,10 +36,10 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
         {
             var floor = await _unitOfWork.Floors.GetFloorByIdAsync(id);
             if (floor == null) return false;
-
             _mapper.Map(floorDto, floor);
             _unitOfWork.Floors.UpdateFloor(floor);
             await _unitOfWork.CompleteAsync();
+            await _activityLogService.LogActivityAsync("تعديل", "دور", id, $"تم تعديل بيانات الدور رقم {floor.FloorNumber}", null);
             return true;
         }
 
@@ -54,10 +47,10 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
         {
             var floor = await _unitOfWork.Floors.GetFloorByIdAsync(id);
             if (floor == null) return false;
-
             floor.IsDeleted = true;
             _unitOfWork.Floors.UpdateFloor(floor);
             await _unitOfWork.CompleteAsync();
+            await _activityLogService.LogActivityAsync("حذف", "دور", id, $"تم حذف الدور رقم {floor.FloorNumber}", null);
             return true;
         }
     }
