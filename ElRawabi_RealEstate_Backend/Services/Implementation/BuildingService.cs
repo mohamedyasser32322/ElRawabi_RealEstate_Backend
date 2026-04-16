@@ -20,15 +20,31 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
             _activityLogService = activityLogService;
         }
 
-        public async Task<IEnumerable<BuildingResponseDto>> GetAllBuildingsAsync() => _mapper.Map<IEnumerable<BuildingResponseDto>>(await _unitOfWork.Buildings.GetAllBuildingsAsync());
-        public async Task<BuildingResponseDto?> GetBuildingByIdAsync(int id) => _mapper.Map<BuildingResponseDto>(await _unitOfWork.Buildings.GetBuildingByIdAsync(id));
+        public async Task<IEnumerable<BuildingResponseDto>> GetAllBuildingsAsync()
+        {
+            var buildings = await _unitOfWork.Buildings.GetAllBuildingsAsync();
+            return _mapper.Map<IEnumerable<BuildingResponseDto>>(buildings);
+        }
+
+        public async Task<IEnumerable<BuildingResponseDto>> GetBuildingsByProjectIdAsync(int projectId)
+        {
+            var buildings = await _unitOfWork.Buildings.GetBuildingsByProjectIdAsync(projectId);
+            return _mapper.Map<IEnumerable<BuildingResponseDto>>(buildings);
+        }
+
+        public async Task<BuildingResponseDto?> GetBuildingByIdAsync(int id)
+        {
+            var building = await _unitOfWork.Buildings.GetBuildingByIdAsync(id);
+            if (building == null) return null;
+            return _mapper.Map<BuildingResponseDto>(building);
+        }
 
         public async Task<BuildingResponseDto> CreateBuildingAsync(BuildingRequestDto buildingDto)
         {
             var building = _mapper.Map<Building>(buildingDto);
             await _unitOfWork.Buildings.AddBuildingAsync(building);
             await _unitOfWork.CompleteAsync();
-            await _activityLogService.LogActivityAsync("إضافة", "عمارة", building.Id, $"تم إضافة عمارة جديدة: {building.Name}", null);
+            await _activityLogService.LogActivityAsync("إضافة", "مبنى", building.Id, $"تم إنشاء مبنى جديد: {building.Name}", null);
             return _mapper.Map<BuildingResponseDto>(building);
         }
 
@@ -39,7 +55,7 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
             _mapper.Map(buildingDto, building);
             _unitOfWork.Buildings.UpdateBuilding(building);
             await _unitOfWork.CompleteAsync();
-            await _activityLogService.LogActivityAsync("تعديل", "عمارة", id, $"تم تعديل بيانات العمارة {building.Name}", null);
+            await _activityLogService.LogActivityAsync("تعديل", "مبنى", id, $"تم تعديل بيانات مبنى {building.Name}", null);
             return true;
         }
 
@@ -50,7 +66,7 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
             building.IsDeleted = true;
             _unitOfWork.Buildings.UpdateBuilding(building);
             await _unitOfWork.CompleteAsync();
-            await _activityLogService.LogActivityAsync("حذف", "عمارة", id, $"تم حذف العمارة {building.Name}", null);
+            await _activityLogService.LogActivityAsync("حذف", "مبنى", id, $"تم حذف مبنى {building.Name}", null);
             return true;
         }
     }

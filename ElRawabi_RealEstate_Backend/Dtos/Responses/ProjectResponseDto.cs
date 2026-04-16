@@ -9,6 +9,8 @@ namespace ElRawabi_RealEstate_Backend.DTOs.Responses
         public int TotalBuildings { get; set; }
         public int TotalUnits { get; set; }
         public int AvailableUnits { get; set; }
+        public int ReservedUnits { get; set; }
+        public int SoldUnits { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 }

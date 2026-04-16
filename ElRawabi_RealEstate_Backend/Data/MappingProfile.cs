@@ -2,6 +2,7 @@ using AutoMapper;
 using ElRawabi_RealEstate_Backend.Modals;
 using ElRawabi_RealEstate_Backend.DTOs.Requests;
 using ElRawabi_RealEstate_Backend.DTOs.Responses;
+using System.Linq;
 
 namespace ElRawabi_RealEstate_Backend.Mappings
 {
@@ -9,6 +10,87 @@ namespace ElRawabi_RealEstate_Backend.Mappings
     {
         public MappingProfile()
         {
+            CreateMap<ProjectRequestDto, Project>();
+            CreateMap<Project, ProjectResponseDto>()
+
+                .ForMember(dest => dest.TotalUnits,
+                    opt => opt.MapFrom(src =>
+                        src.Buildings
+                            .Where(b => !b.IsDeleted)
+                            .SelectMany(b => b.Floors)
+                            .Where(f => !f.IsDeleted)
+                            .SelectMany(f => f.Units)
+                            .Where(u => !u.IsDeleted)
+                            .Count()))
+
+                .ForMember(dest => dest.AvailableUnits,
+                    opt => opt.MapFrom(src =>
+                        src.Buildings
+                            .Where(b => !b.IsDeleted)
+                            .SelectMany(b => b.Floors)
+                            .Where(f => !f.IsDeleted)
+                            .SelectMany(f => f.Units)
+                            .Where(u => !u.IsDeleted && u.Status == UnitStatus.Available)
+                            .Count()))
+
+                .ForMember(dest => dest.ReservedUnits,
+                    opt => opt.MapFrom(src =>
+                        src.Buildings
+                            .Where(b => !b.IsDeleted)
+                            .SelectMany(b => b.Floors)
+                            .Where(f => !f.IsDeleted)
+                            .SelectMany(f => f.Units)
+                            .Where(u => !u.IsDeleted && u.Status == UnitStatus.Reserved)
+                            .Count()))
+
+                .ForMember(dest => dest.SoldUnits,
+                    opt => opt.MapFrom(src =>
+                        src.Buildings
+                            .Where(b => !b.IsDeleted)
+                            .SelectMany(b => b.Floors)
+                            .Where(f => !f.IsDeleted)
+                            .SelectMany(f => f.Units)
+                            .Where(u => !u.IsDeleted && u.Status == UnitStatus.Sold)
+                            .Count()));
+
+
+            CreateMap<BuildingRequestDto, Building>();
+            CreateMap<Building, BuildingResponseDto>()
+                .ForMember(dest => dest.ProjectName,
+                    opt => opt.MapFrom(src => src.Project != null ? src.Project.Name : string.Empty))
+
+                .ForMember(dest => dest.TotalUnits,
+                    opt => opt.MapFrom(src =>
+                        src.Floors
+                            .Where(f => !f.IsDeleted)
+                            .SelectMany(f => f.Units)
+                            .Where(u => !u.IsDeleted)
+                            .Count()))
+
+                .ForMember(dest => dest.AvailableUnits,
+                    opt => opt.MapFrom(src =>
+                        src.Floors
+                            .Where(f => !f.IsDeleted)
+                            .SelectMany(f => f.Units)
+                            .Where(u => !u.IsDeleted && u.Status == UnitStatus.Available)
+                            .Count()))
+
+                .ForMember(dest => dest.ReservedUnits,
+                    opt => opt.MapFrom(src =>
+                        src.Floors
+                            .Where(f => !f.IsDeleted)
+                            .SelectMany(f => f.Units)
+                            .Where(u => !u.IsDeleted && u.Status == UnitStatus.Reserved)
+                            .Count()))
+
+                .ForMember(dest => dest.SoldUnits,
+                    opt => opt.MapFrom(src =>
+                        src.Floors
+                            .Where(f => !f.IsDeleted)
+                            .SelectMany(f => f.Units)
+                            .Where(u => !u.IsDeleted && u.Status == UnitStatus.Sold)
+                            .Count()));
+
             // Role
             CreateMap<RoleRequestDto, Role>();
             CreateMap<Role, RoleResponseDto>();
@@ -22,15 +104,6 @@ namespace ElRawabi_RealEstate_Backend.Mappings
             // Buyer
             CreateMap<BuyerRequestDto, Buyer>();
             CreateMap<Buyer, BuyerResponseDto>();
-
-            // Project
-            CreateMap<ProjectRequestDto, Project>();
-            CreateMap<Project, ProjectResponseDto>();
-
-            // Building
-            CreateMap<BuildingRequestDto, Building>();
-            CreateMap<Building, BuildingResponseDto>()
-                .ForMember(dest => dest.ProjectName, opt => opt.MapFrom(src => src.Project != null ? src.Project.Name : string.Empty));
 
             // Floor
             CreateMap<FloorRequestDto, Floor>();

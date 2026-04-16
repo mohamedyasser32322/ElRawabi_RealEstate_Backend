@@ -19,8 +19,22 @@ namespace ElRawabi_RealEstate_Backend.Repositories.Implementations
             _dbSet = context.Set<Project>();
         }
 
-        public async Task<IEnumerable<Project>> GetAllProjectsAsync() => await _dbSet.ToListAsync();
-        public async Task<Project?> GetProjectByIdAsync(int id) => await _dbSet.FindAsync(id);
+        public async Task<IEnumerable<Project>> GetAllProjectsAsync()
+        {
+            return await _dbSet
+                .Include(p => p.Buildings)
+                    .ThenInclude(b => b.Floors)
+                        .ThenInclude(f => f.Units)
+                .ToListAsync();
+        }
+        public async Task<Project?> GetProjectByIdAsync(int id)
+        {
+            return await _dbSet
+                .Include(p => p.Buildings)
+                    .ThenInclude(b => b.Floors)
+                        .ThenInclude(f => f.Units)
+                .FirstOrDefaultAsync(p => p.Id == id);
+        }
         public async Task AddProjectAsync(Project project) => await _dbSet.AddAsync(project);
         public void UpdateProject(Project project) => _dbSet.Update(project);
         public void DeleteProject(Project project) => _dbSet.Remove(project); // Consider soft delete logic here if applicable

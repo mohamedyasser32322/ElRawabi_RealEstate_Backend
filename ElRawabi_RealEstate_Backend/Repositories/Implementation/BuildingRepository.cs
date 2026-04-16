@@ -20,7 +20,14 @@ namespace ElRawabi_RealEstate_Backend.Repositories.Implementations
         }
 
         public async Task<IEnumerable<Building>> GetAllBuildingsAsync() => await _dbSet.ToListAsync();
-        public async Task<Building?> GetBuildingByIdAsync(int id) => await _dbSet.FindAsync(id);
+        public async Task<Building?> GetBuildingByIdAsync(int id)
+        {
+            return await _dbSet
+                .Include(b => b.Floors)
+                    .ThenInclude(f => f.Units)
+                .Include(b => b.Project)
+                .FirstOrDefaultAsync(b => b.Id == id);
+        }
         public async Task AddBuildingAsync(Building building) => await _dbSet.AddAsync(building);
         public void UpdateBuilding(Building building) => _dbSet.Update(building);
         public void DeleteBuilding(Building building) => _dbSet.Remove(building);
@@ -28,7 +35,11 @@ namespace ElRawabi_RealEstate_Backend.Repositories.Implementations
 
         public async Task<IEnumerable<Building>> GetBuildingsByProjectIdAsync(int projectId)
         {
-            return await _dbSet.Where(b => b.ProjectId == projectId).ToListAsync();
+            return await _dbSet
+                .Where(b => b.ProjectId == projectId)
+                .Include(b => b.Floors)
+                    .ThenInclude(f => f.Units)
+                .ToListAsync();
         }
     }
 }

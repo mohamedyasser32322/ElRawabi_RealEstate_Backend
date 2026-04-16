@@ -29,7 +29,8 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
         public async Task<ProjectResponseDto?> GetProjectByIdAsync(int id)
         {
             var project = await _unitOfWork.Projects.GetProjectByIdAsync(id);
-            return project == null ? null : _mapper.Map<ProjectResponseDto>(project);
+            if (project == null) return null;
+            return _mapper.Map<ProjectResponseDto>(project);
         }
 
         public async Task<ProjectResponseDto> CreateProjectAsync(ProjectRequestDto projectDto)
