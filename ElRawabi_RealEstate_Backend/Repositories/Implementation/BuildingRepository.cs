@@ -19,7 +19,16 @@ namespace ElRawabi_RealEstate_Backend.Repositories.Implementations
             _dbSet = context.Set<Building>();
         }
 
-        public async Task<IEnumerable<Building>> GetAllBuildingsAsync() => await _dbSet.ToListAsync();
+        // التعديل هنا: إضافة Include لتحميل البيانات اللازمة لحساب العدادات
+        public async Task<IEnumerable<Building>> GetAllBuildingsAsync()
+        {
+            return await _dbSet
+                .Include(b => b.Floors)
+                    .ThenInclude(f => f.Units)
+                .Include(b => b.Project)
+                .ToListAsync();
+        }
+
         public async Task<Building?> GetBuildingByIdAsync(int id)
         {
             return await _dbSet
@@ -28,6 +37,7 @@ namespace ElRawabi_RealEstate_Backend.Repositories.Implementations
                 .Include(b => b.Project)
                 .FirstOrDefaultAsync(b => b.Id == id);
         }
+
         public async Task AddBuildingAsync(Building building) => await _dbSet.AddAsync(building);
         public void UpdateBuilding(Building building) => _dbSet.Update(building);
         public void DeleteBuilding(Building building) => _dbSet.Remove(building);
