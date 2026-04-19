@@ -23,12 +23,12 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
         public async Task<IEnumerable<NotificationResponseDto>> GetAllNotificationsAsync() => _mapper.Map<IEnumerable<NotificationResponseDto>>(await _unitOfWork.Notifications.GetAllNotificationsAsync());
         public async Task<NotificationResponseDto?> GetNotificationByIdAsync(int id) => _mapper.Map<NotificationResponseDto>(await _unitOfWork.Notifications.GetNotificationByIdAsync(id));
 
-        public async Task<NotificationResponseDto> CreateNotificationAsync(NotificationRequestDto notificationDto)
+        public async Task<NotificationResponseDto> CreateNotificationAsync(NotificationRequestDto notificationDto, int? currentUserId)
         {
             var notification = _mapper.Map<Notification>(notificationDto);
             await _unitOfWork.Notifications.AddNotificationAsync(notification);
             await _unitOfWork.CompleteAsync();
-            await _activityLogService.LogActivityAsync("إرسال", "تنبيه", notification.Id, $"تم إرسال تنبيه جديد", null);
+            await _activityLogService.LogActivityAsync("إرسال", "تنبيه", notification.Id, $"تم إرسال تنبيه جديد", currentUserId);
             return _mapper.Map<NotificationResponseDto>(notification);
         }
 

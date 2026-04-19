@@ -7,8 +7,8 @@ namespace ElRawabi_RealEstate_Backend.Services.Interface
     {
         Task<IEnumerable<BuildingImageResponseDto>> GetAllBuildingImagesAsync();
         Task<BuildingImageResponseDto?> GetBuildingImageByIdAsync(int id);
-        Task<BuildingImageResponseDto> CreateBuildingImageAsync(BuildingImageRequestDto imageDto);
-        Task<bool> UpdateBuildingImageAsync(int id, BuildingImageRequestDto imageDto);
-        Task<bool> DeleteBuildingImageAsync(int id);
+        Task<BuildingImageResponseDto> CreateBuildingImageAsync(BuildingImageRequestDto imageDto, int? currentUserId);
+        Task<bool> UpdateBuildingImageAsync(int id, BuildingImageRequestDto imageDto, int? currentUserId);
+        Task<bool> DeleteBuildingImageAsync(int id, int? currentUserId);
     }
 }

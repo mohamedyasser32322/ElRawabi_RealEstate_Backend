@@ -7,8 +7,8 @@ namespace ElRawabi_RealEstate_Backend.Services.Interface
     {
         Task<IEnumerable<RoleResponseDto>> GetAllRolesAsync();
         Task<RoleResponseDto?> GetRoleByIdAsync(int id);
-        Task<RoleResponseDto> CreateRoleAsync(RoleRequestDto roleDto);
-        Task<bool> UpdateRoleAsync(int id, RoleRequestDto roleDto);
-        Task<bool> DeleteRoleAsync(int id);
+        Task<RoleResponseDto> CreateRoleAsync(RoleRequestDto roleDto, int? currentUserId);
+        Task<bool> UpdateRoleAsync(int id, RoleRequestDto roleDto, int? currentUserId);
+        Task<bool> DeleteRoleAsync(int id, int? currentUserId);
     }
 }

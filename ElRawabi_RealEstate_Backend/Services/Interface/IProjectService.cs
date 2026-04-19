@@ -7,8 +7,8 @@ namespace ElRawabi_RealEstate_Backend.Services.Interface
     {
         Task<IEnumerable<ProjectResponseDto>> GetAllProjectsAsync();
         Task<ProjectResponseDto?> GetProjectByIdAsync(int id);
-        Task<ProjectResponseDto> CreateProjectAsync(ProjectRequestDto projectDto);
-        Task<bool> UpdateProjectAsync(int id, ProjectRequestDto projectDto);
-        Task<bool> DeleteProjectAsync(int id);
+        Task<ProjectResponseDto> CreateProjectAsync(ProjectRequestDto projectDto ,int? currentUserId);
+        Task<bool> UpdateProjectAsync(int id, ProjectRequestDto projectDto, int? currentUserId);
+        Task<bool> DeleteProjectAsync(int id, int? currentUserId);
     }
 }

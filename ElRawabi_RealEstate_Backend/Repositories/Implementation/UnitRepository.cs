@@ -19,21 +19,43 @@ namespace ElRawabi_RealEstate_Backend.Repositories.Implementations
             _dbSet = context.Set<Unit>();
         }
 
-        public async Task<IEnumerable<Unit>> GetAllUnitsAsync() => await _dbSet.ToListAsync();
-        public async Task<Unit?> GetUnitByIdAsync(int id) => await _dbSet.FindAsync(id);
+        public async Task<IEnumerable<Unit>> GetAllUnitsAsync()
+        {
+            return await _dbSet
+                .Include(u => u.Floor)
+                .Include(u => u.Booking)
+                .ToListAsync();
+        }
+
+        public async Task<Unit?> GetUnitByIdAsync(int id)
+        {
+            return await _dbSet
+                .Include(u => u.Floor)
+                .Include(u => u.Booking)
+                .FirstOrDefaultAsync(u => u.Id == id);
+        }
+
         public async Task AddUnitAsync(Unit unit) => await _dbSet.AddAsync(unit);
         public void UpdateUnit(Unit unit) => _dbSet.Update(unit);
-        public void DeleteUnit(Unit unit) => _dbSet.Remove(unit); // Consider soft delete logic here if applicable
+        public void DeleteUnit(Unit unit) => _dbSet.Remove(unit);
         public async Task SaveChangesAsync() => await _context.SaveChangesAsync();
 
         public async Task<IEnumerable<Unit>> GetUnitsByFloorIdAsync(int floorId)
         {
-            return await _dbSet.Where(u => u.FloorId == floorId).ToListAsync();
+            return await _dbSet
+                .Where(u => u.FloorId == floorId)
+                .Include(u => u.Floor)
+                .Include(u => u.Booking)
+                .ToListAsync();
         }
 
         public async Task<IEnumerable<Unit>> GetUnitsByStatusAsync(UnitStatus status)
         {
-            return await _dbSet.Where(u => u.Status == status).ToListAsync();
+            return await _dbSet
+                .Where(u => u.Status == status)
+                .Include(u => u.Floor)
+                .Include(u => u.Booking)
+                .ToListAsync();
         }
     }
 }

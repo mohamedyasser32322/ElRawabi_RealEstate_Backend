@@ -20,23 +20,13 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
             _activityLogService = activityLogService;
         }
 
-        public async Task<IEnumerable<UnitResponseDto>> GetAllUnitsAsync()
-        {
-            var units = await _unitOfWork.Units.GetAllUnitsAsync();
-            return _mapper.Map<IEnumerable<UnitResponseDto>>(units);
-        }
+        public async Task<IEnumerable<UnitResponseDto>> GetAllUnitsAsync() => _mapper.Map<IEnumerable<UnitResponseDto>>(await _unitOfWork.Units.GetAllUnitsAsync());
+        public async Task<UnitResponseDto?> GetUnitByIdAsync(int id) { var unit = await _unitOfWork.Units.GetUnitByIdAsync(id); return unit == null ? null : _mapper.Map<UnitResponseDto>(unit); }
 
-        public async Task<UnitResponseDto?> GetUnitByIdAsync(int id)
-        {
-            var unit = await _unitOfWork.Units.GetUnitByIdAsync(id);
-            return unit == null ? null : _mapper.Map<UnitResponseDto>(unit);
-        }
-
-        public async Task<UnitResponseDto> CreateUnitAsync(UnitRequestDto unitDto)
+        public async Task<UnitResponseDto> CreateUnitAsync(UnitRequestDto unitDto, int? currentUserId)
         {
             var unit = _mapper.Map<Unit>(unitDto);
             await _unitOfWork.Units.AddUnitAsync(unit);
-
             var floor = await _unitOfWork.Floors.GetFloorByIdAsync(unitDto.FloorId);
             if (floor != null)
             {
@@ -44,34 +34,53 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
                 if (building != null)
                 {
                     building.TotalUnits++;
-                    building.AvailableUnits++;
+                    if (unit.Status == UnitStatus.Available) building.AvailableUnits++;
                     var project = await _unitOfWork.Projects.GetProjectByIdAsync(building.ProjectId);
-                    if (project != null) { project.TotalUnits++; project.AvailableUnits++; }
+                    if (project != null) { project.TotalUnits++; if (unit.Status == UnitStatus.Available) project.AvailableUnits++; }
                 }
             }
-
             await _unitOfWork.CompleteAsync();
-            await _activityLogService.LogActivityAsync("إضافة", "وحدة", unit.Id, $"تم إضافة وحدة رقم {unit.UnitNumber}", null);
+            await _activityLogService.LogActivityAsync("إضافة", "وحدة", unit.Id, $"تم إضافة وحدة رقم {unit.UnitNumber}", currentUserId);
             return _mapper.Map<UnitResponseDto>(unit);
         }
 
-        public async Task<bool> UpdateUnitAsync(int id, UnitRequestDto unitDto)
+        public async Task<bool> UpdateUnitAsync(int id, UnitRequestDto unitDto, int? currentUserId)
         {
             var unit = await _unitOfWork.Units.GetUnitByIdAsync(id);
             if (unit == null) return false;
+            var oldStatus = unit.Status;
             _mapper.Map(unitDto, unit);
+            var newStatus = unit.Status;
+            if (oldStatus != newStatus)
+            {
+                var floor = await _unitOfWork.Floors.GetFloorByIdAsync(unit.FloorId);
+                if (floor != null)
+                {
+                    var building = await _unitOfWork.Buildings.GetBuildingByIdAsync(floor.BuildingId);
+                    if (building != null)
+                    {
+                        if (oldStatus == UnitStatus.Available) building.AvailableUnits--;
+                        if (newStatus == UnitStatus.Available) building.AvailableUnits++;
+                        var project = await _unitOfWork.Projects.GetProjectByIdAsync(building.ProjectId);
+                        if (project != null)
+                        {
+                            if (oldStatus == UnitStatus.Available) project.AvailableUnits--;
+                            if (newStatus == UnitStatus.Available) project.AvailableUnits++;
+                        }
+                    }
+                }
+            }
             _unitOfWork.Units.UpdateUnit(unit);
             await _unitOfWork.CompleteAsync();
-            await _activityLogService.LogActivityAsync("تعديل", "وحدة", id, $"تم تعديل بيانات الوحدة {unit.UnitNumber}", null);
+            await _activityLogService.LogActivityAsync("تعديل", "وحدة", id, $"تم تعديل بيانات الوحدة {unit.UnitNumber}", currentUserId);
             return true;
         }
 
-        public async Task<bool> DeleteUnitAsync(int id)
+        public async Task<bool> DeleteUnitAsync(int id, int? currentUserId)
         {
             var unit = await _unitOfWork.Units.GetUnitByIdAsync(id);
             if (unit == null) return false;
             unit.IsDeleted = true;
-
             var floor = await _unitOfWork.Floors.GetFloorByIdAsync(unit.FloorId);
             if (floor != null)
             {
@@ -84,10 +93,9 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
                     if (project != null) { project.TotalUnits--; if (unit.Status == UnitStatus.Available) project.AvailableUnits--; }
                 }
             }
-
             _unitOfWork.Units.UpdateUnit(unit);
             await _unitOfWork.CompleteAsync();
-            await _activityLogService.LogActivityAsync("حذف", "وحدة", id, $"تم حذف الوحدة {unit.UnitNumber}", null);
+            await _activityLogService.LogActivityAsync("حذف", "وحدة", id, $"تم حذف الوحدة {unit.UnitNumber}", currentUserId);
             return true;
         }
     }

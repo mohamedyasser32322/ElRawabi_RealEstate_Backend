@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace ElRawabi_RealEstate_Backend.DTOs.Responses
 {
     public class BuildingResponseDto
@@ -13,5 +15,6 @@ namespace ElRawabi_RealEstate_Backend.DTOs.Responses
         public int ProjectId { get; set; }
         public string ProjectName { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
+        public ICollection<FloorResponseDto> Floors { get; set; } = new List<FloorResponseDto>();
     }
 }

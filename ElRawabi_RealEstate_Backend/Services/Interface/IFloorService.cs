@@ -7,8 +7,8 @@ namespace ElRawabi_RealEstate_Backend.Services.Interface
     {
         Task<IEnumerable<FloorResponseDto>> GetAllFloorsAsync();
         Task<FloorResponseDto?> GetFloorByIdAsync(int id);
-        Task<FloorResponseDto> CreateFloorAsync(FloorRequestDto floorDto);
-        Task<bool> UpdateFloorAsync(int id, FloorRequestDto floorDto);
-        Task<bool> DeleteFloorAsync(int id);
+        Task<FloorResponseDto> CreateFloorAsync(FloorRequestDto floorDto, int? currentUserId);
+        Task<bool> UpdateFloorAsync(int id, FloorRequestDto floorDto, int? currentUserId);
+        Task<bool> DeleteFloorAsync(int id, int? currentUserId);
     }
 }

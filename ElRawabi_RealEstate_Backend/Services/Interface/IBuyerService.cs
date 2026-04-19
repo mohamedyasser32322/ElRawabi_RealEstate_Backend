@@ -7,8 +7,8 @@ namespace ElRawabi_RealEstate_Backend.Services.Interface
     {
         Task<IEnumerable<BuyerResponseDto>> GetAllBuyersAsync();
         Task<BuyerResponseDto?> GetBuyerByIdAsync(int id);
-        Task<BuyerResponseDto> CreateBuyerAsync(BuyerRequestDto buyerDto);
-        Task<bool> UpdateBuyerAsync(int id, BuyerRequestDto buyerDto);
-        Task<bool> DeleteBuyerAsync(int id);
+        Task<BuyerResponseDto> CreateBuyerAsync(BuyerRequestDto buyerDto, int? currentUserId);
+        Task<bool> UpdateBuyerAsync(int id, BuyerRequestDto buyerDto, int? currentUserId);
+        Task<bool> DeleteBuyerAsync(int id, int? currentUserId);
     }
 }

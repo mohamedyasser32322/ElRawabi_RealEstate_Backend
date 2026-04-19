@@ -21,47 +21,38 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
             _activityLogService = activityLogService;
         }
 
-        public async Task<IEnumerable<BuyerResponseDto>> GetAllBuyersAsync()
-        {
-            var buyers = await _unitOfWork.Buyers.GetAllBuyersAsync();
-            return _mapper.Map<IEnumerable<BuyerResponseDto>>(buyers);
-        }
+        public async Task<IEnumerable<BuyerResponseDto>> GetAllBuyersAsync() => _mapper.Map<IEnumerable<BuyerResponseDto>>(await _unitOfWork.Buyers.GetAllBuyersAsync());
+        public async Task<BuyerResponseDto?> GetBuyerByIdAsync(int id) { var b = await _unitOfWork.Buyers.GetBuyerByIdAsync(id); return b == null ? null : _mapper.Map<BuyerResponseDto>(b); }
 
-        public async Task<BuyerResponseDto?> GetBuyerByIdAsync(int id)
-        {
-            var buyer = await _unitOfWork.Buyers.GetBuyerByIdAsync(id);
-            return buyer == null ? null : _mapper.Map<BuyerResponseDto>(buyer);
-        }
-
-        public async Task<BuyerResponseDto> CreateBuyerAsync(BuyerRequestDto buyerDto)
+        public async Task<BuyerResponseDto> CreateBuyerAsync(BuyerRequestDto buyerDto, int? currentUserId)
         {
             var buyer = _mapper.Map<Buyer>(buyerDto);
             buyer.HashPassword = PasswordHelper.HashPassword(buyerDto.Password);
             await _unitOfWork.Buyers.AddBuyerAsync(buyer);
             await _unitOfWork.CompleteAsync();
-            await _activityLogService.LogActivityAsync("إضافة", "عميل", buyer.Id, $"تم تسجيل عميل جديد: {buyer.FirstName} {buyer.LastName}", null);
+            await _activityLogService.LogActivityAsync("إضافة", "عميل", buyer.Id, $"تم تسجيل عميل جديد: {buyer.FirstName} {buyer.LastName}", currentUserId);
             return _mapper.Map<BuyerResponseDto>(buyer);
         }
 
-        public async Task<bool> UpdateBuyerAsync(int id, BuyerRequestDto buyerDto)
+        public async Task<bool> UpdateBuyerAsync(int id, BuyerRequestDto buyerDto, int? currentUserId)
         {
             var buyer = await _unitOfWork.Buyers.GetBuyerByIdAsync(id);
             if (buyer == null) return false;
             _mapper.Map(buyerDto, buyer);
             _unitOfWork.Buyers.UpdateBuyer(buyer);
             await _unitOfWork.CompleteAsync();
-            await _activityLogService.LogActivityAsync("تعديل", "عميل", id, $"تم تعديل بيانات العميل {buyer.FirstName}", null);
+            await _activityLogService.LogActivityAsync("تعديل", "عميل", id, $"تم تعديل بيانات العميل {buyer.FirstName}", currentUserId);
             return true;
         }
 
-        public async Task<bool> DeleteBuyerAsync(int id)
+        public async Task<bool> DeleteBuyerAsync(int id, int? currentUserId)
         {
             var buyer = await _unitOfWork.Buyers.GetBuyerByIdAsync(id);
             if (buyer == null) return false;
             buyer.IsDeleted = true;
             _unitOfWork.Buyers.UpdateBuyer(buyer);
             await _unitOfWork.CompleteAsync();
-            await _activityLogService.LogActivityAsync("حذف", "عميل", id, $"تم حذف العميل {buyer.FirstName}", null);
+            await _activityLogService.LogActivityAsync("حذف", "عميل", id, $"تم حذف العميل {buyer.FirstName}", currentUserId);
             return true;
         }
     }

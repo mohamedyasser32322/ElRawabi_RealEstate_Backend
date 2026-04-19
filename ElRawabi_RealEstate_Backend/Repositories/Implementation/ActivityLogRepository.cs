@@ -19,11 +19,23 @@ namespace ElRawabi_RealEstate_Backend.Repositories.Implementations
             _dbSet = context.Set<ActivityLog>();
         }
 
-        public async Task<IEnumerable<ActivityLog>> GetAllActivityLogsAsync() => await _dbSet.ToListAsync();
-        public async Task<ActivityLog?> GetActivityLogByIdAsync(int id) => await _dbSet.FindAsync(id);
+        public async Task<IEnumerable<ActivityLog>> GetAllActivityLogsAsync()
+        {
+            return await _context.ActivityLogs
+                .Include(x => x.User)
+                    .ThenInclude(u => u.Role)
+                .Where(x => !x.IsDeleted)
+                .OrderByDescending(x => x.Timestamp)
+                .ToListAsync();
+        }
+        public async Task<ActivityLog?> GetActivityLogByIdAsync(int id)
+            => await _context.ActivityLogs
+                .Include(x => x.User)
+                .ThenInclude(u => u.Role)
+                .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
         public async Task AddActivityLogAsync(ActivityLog activityLog) => await _dbSet.AddAsync(activityLog);
         public void UpdateActivityLog(ActivityLog activityLog) => _dbSet.Update(activityLog);
-        public void DeleteActivityLog(ActivityLog activityLog) => _dbSet.Remove(activityLog); // Consider soft delete logic here if applicable
+        public void DeleteActivityLog(ActivityLog activityLog) => _dbSet.Remove(activityLog);
         public async Task SaveChangesAsync() => await _context.SaveChangesAsync();
 
         public async Task<IEnumerable<ActivityLog>> GetActivityLogsByUserIdAsync(int userId)

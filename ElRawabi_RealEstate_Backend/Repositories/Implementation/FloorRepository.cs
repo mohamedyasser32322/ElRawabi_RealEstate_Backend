@@ -16,16 +16,31 @@ namespace ElRawabi_RealEstate_Backend.Repositories.Implementations
             _dbSet = context.Set<Floor>();
         }
 
-        public async Task<IEnumerable<Floor>> GetAllFloorsAsync() => await _dbSet.ToListAsync();
-        public async Task<Floor?> GetFloorByIdAsync(int id) => await _dbSet.FindAsync(id);
+        public async Task<IEnumerable<Floor>> GetAllFloorsAsync()
+        {
+            return await _dbSet
+                .Include(f => f.Units)
+                .ToListAsync();
+        }
+
+        public async Task<Floor?> GetFloorByIdAsync(int id)
+        {
+            return await _dbSet
+                .Include(f => f.Units)
+                .FirstOrDefaultAsync(f => f.Id == id);
+        }
+
         public async Task AddFloorAsync(Floor floor) => await _dbSet.AddAsync(floor);
         public void UpdateFloor(Floor floor) => _dbSet.Update(floor);
-        public void DeleteFloor(Floor floor) => _dbSet.Remove(floor); // Consider soft delete logic here if applicable
+        public void DeleteFloor(Floor floor) => _dbSet.Remove(floor);
         public async Task SaveChangesAsync() => await _context.SaveChangesAsync();
 
         public async Task<IEnumerable<Floor>> GetFloorsByBuildingIdAsync(int buildingId)
         {
-            return await _dbSet.Where(f => f.BuildingId == buildingId).ToListAsync();
+            return await _dbSet
+                .Where(f => f.BuildingId == buildingId)
+                .Include(f => f.Units)
+                .ToListAsync();
         }
     }
 }

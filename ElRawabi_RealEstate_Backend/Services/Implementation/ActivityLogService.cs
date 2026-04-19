@@ -22,7 +22,22 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
 
         public async Task LogActivityAsync(string action, string entity, int entityId, string? details, int? userId)
         {
-            var log = new ActivityLog { Action = action, Entity = entity, EntityId = entityId, Details = details, UserId = userId, Timestamp = DateTime.UtcNow };
+           
+            var saudiTime = TimeZoneInfo.ConvertTimeFromUtc(
+                DateTime.UtcNow,
+                TimeZoneInfo.FindSystemTimeZoneById("Arab Standard Time")
+            );
+
+            var log = new ActivityLog
+            {
+                Action = action,
+                Entity = entity,
+                EntityId = entityId,
+                Details = details,
+                UserId = userId,
+                Timestamp = saudiTime  
+            };
+
             await _unitOfWork.ActivityLogs.AddActivityLogAsync(log);
             await _unitOfWork.CompleteAsync();
         }

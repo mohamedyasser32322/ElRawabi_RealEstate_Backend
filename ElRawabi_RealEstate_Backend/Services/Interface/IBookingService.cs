@@ -7,8 +7,8 @@ namespace ElRawabi_RealEstate_Backend.Services.Interface
     {
         Task<IEnumerable<BookingResponseDto>> GetAllBookingsAsync();
         Task<BookingResponseDto?> GetBookingByIdAsync(int id);
-        Task<BookingResponseDto> CreateBookingAsync(BookingRequestDto bookingDto);
-        Task<bool> UpdateBookingAsync(int id, BookingRequestDto bookingDto);
-        Task<bool> DeleteBookingAsync(int id);
+        Task<BookingResponseDto> CreateBookingAsync(BookingRequestDto bookingDto, int? currentUserId);
+        Task<bool> UpdateBookingAsync(int id, BookingRequestDto bookingDto, int? currentUserId);
+        Task<bool> DeleteBookingAsync(int id, int? currentUserId);
     }
 }

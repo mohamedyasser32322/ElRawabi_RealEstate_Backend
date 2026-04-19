@@ -7,7 +7,7 @@ namespace ElRawabi_RealEstate_Backend.Services.Interface
     {
         Task<IEnumerable<NotificationResponseDto>> GetAllNotificationsAsync();
         Task<NotificationResponseDto?> GetNotificationByIdAsync(int id);
-        Task<NotificationResponseDto> CreateNotificationAsync(NotificationRequestDto notificationDto);
+        Task<NotificationResponseDto> CreateNotificationAsync(NotificationRequestDto notificationDto, int? currentUserId);
         Task<bool> MarkAsReadAsync(int id);
         Task<bool> DeleteNotificationAsync(int id);
     }
