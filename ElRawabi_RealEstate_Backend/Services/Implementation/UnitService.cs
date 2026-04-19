@@ -48,9 +48,15 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
         {
             var unit = await _unitOfWork.Units.GetUnitByIdAsync(id);
             if (unit == null) return false;
+
             var oldStatus = unit.Status;
             _mapper.Map(unitDto, unit);
             var newStatus = unit.Status;
+
+            unit.BuyerId = (newStatus == UnitStatus.Reserved || newStatus == UnitStatus.Sold)
+                ? unitDto.BuyerId
+                : null;
+
             if (oldStatus != newStatus)
             {
                 var floor = await _unitOfWork.Floors.GetFloorByIdAsync(unit.FloorId);
@@ -61,6 +67,7 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
                     {
                         if (oldStatus == UnitStatus.Available) building.AvailableUnits--;
                         if (newStatus == UnitStatus.Available) building.AvailableUnits++;
+
                         var project = await _unitOfWork.Projects.GetProjectByIdAsync(building.ProjectId);
                         if (project != null)
                         {
@@ -70,6 +77,7 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
                     }
                 }
             }
+
             _unitOfWork.Units.UpdateUnit(unit);
             await _unitOfWork.CompleteAsync();
             await _activityLogService.LogActivityAsync("تعديل", "وحدة", id, $"تم تعديل بيانات الوحدة {unit.UnitNumber}", currentUserId);

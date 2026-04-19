@@ -21,24 +21,42 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
         }
 
         public async Task<IEnumerable<BookingResponseDto>> GetAllBookingsAsync() => _mapper.Map<IEnumerable<BookingResponseDto>>(await _unitOfWork.Bookings.GetAllBookingsAsync());
-        public async Task<BookingResponseDto?> GetBookingByIdAsync(int id) { var b = await _unitOfWork.Bookings.GetBookingByIdAsync(id); return b == null ? null : _mapper.Map<BookingResponseDto>(b); }
+
+        public async Task<BookingResponseDto?> GetBookingByIdAsync(int id)
+        {
+            var b = await _unitOfWork.Bookings.GetBookingByIdAsync(id);
+            return b == null ? null : _mapper.Map<BookingResponseDto>(b);
+        }
 
         public async Task<BookingResponseDto> CreateBookingAsync(BookingRequestDto bookingDto, int? currentUserId)
         {
             var booking = _mapper.Map<Booking>(bookingDto);
             await _unitOfWork.Bookings.AddBookingAsync(booking);
+
+            // 🔥 احفظ البوكينج الأول عشان الداتا بيز تديله ID
+            await _unitOfWork.CompleteAsync();
+
             var unit = await _unitOfWork.Units.GetUnitByIdAsync(bookingDto.UnitId);
             if (unit != null)
             {
                 unit.Status = UnitStatus.Reserved;
                 unit.BuyerId = bookingDto.BuyerId;
+                unit.BookingId = booking.Id; // 🔥 اربط الـ ID صراحة هنا
+
                 var floor = await _unitOfWork.Floors.GetFloorByIdAsync(unit.FloorId);
-                var building = await _unitOfWork.Buildings.GetBuildingByIdAsync(floor.BuildingId);
-                building.AvailableUnits--;
-                var project = await _unitOfWork.Projects.GetProjectByIdAsync(building.ProjectId);
-                project.AvailableUnits--;
+                if (floor != null)
+                {
+                    var building = await _unitOfWork.Buildings.GetBuildingByIdAsync(floor.BuildingId);
+                    if (building != null)
+                    {
+                        building.AvailableUnits--;
+                        var project = await _unitOfWork.Projects.GetProjectByIdAsync(building.ProjectId);
+                        if (project != null) project.AvailableUnits--;
+                    }
+                }
             }
-            await _unitOfWork.CompleteAsync();
+
+            await _unitOfWork.CompleteAsync(); // احفظ الوحدة بالتعديلات الجديدة
             await _activityLogService.LogActivityAsync("حجز", "وحدة", booking.UnitId, $"تم حجز الوحدة للعميل {booking.BuyerId}", currentUserId);
             return _mapper.Map<BookingResponseDto>(booking);
         }
@@ -47,10 +65,48 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
         {
             var booking = await _unitOfWork.Bookings.GetBookingByIdAsync(id);
             if (booking == null) return false;
+
             _mapper.Map(bookingDto, booking);
+
+            var unit = await _unitOfWork.Units.GetUnitByIdAsync(booking.UnitId);
+            if (unit != null)
+            {
+                if (unit.BuyerId != booking.BuyerId)
+                {
+                    unit.BuyerId = booking.BuyerId;
+                }
+
+                if (booking.Status == BookingStatus.Cancelled && unit.Status != UnitStatus.Available)
+                {
+                    unit.Status = UnitStatus.Available;
+                    unit.BuyerId = null;
+                    unit.BookingId = null;
+
+                    var floor = await _unitOfWork.Floors.GetFloorByIdAsync(unit.FloorId);
+                    if (floor != null)
+                    {
+                        var building = await _unitOfWork.Buildings.GetBuildingByIdAsync(floor.BuildingId);
+                        if (building != null)
+                        {
+                            building.AvailableUnits++;
+                            var project = await _unitOfWork.Projects.GetProjectByIdAsync(building.ProjectId);
+                            if (project != null)
+                            {
+                                project.AvailableUnits++;
+                            }
+                        }
+                    }
+                }
+                else if (booking.Status == BookingStatus.Confirmed)
+                {
+                    unit.Status = UnitStatus.Sold;
+                }
+            }
+
             _unitOfWork.Bookings.UpdateBooking(booking);
             await _unitOfWork.CompleteAsync();
             await _activityLogService.LogActivityAsync("تعديل", "حجز", id, $"تم تعديل بيانات الحجز رقم {id}", currentUserId);
+
             return true;
         }
 
@@ -58,21 +114,36 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
         {
             var booking = await _unitOfWork.Bookings.GetBookingByIdAsync(id);
             if (booking == null) return false;
-            booking.IsDeleted = true;
+
+            _unitOfWork.Bookings.DeleteBooking(booking);
+
             var unit = await _unitOfWork.Units.GetUnitByIdAsync(booking.UnitId);
             if (unit != null)
             {
                 unit.Status = UnitStatus.Available;
                 unit.BuyerId = null;
+                unit.BookingId = null;
+
                 var floor = await _unitOfWork.Floors.GetFloorByIdAsync(unit.FloorId);
-                var building = await _unitOfWork.Buildings.GetBuildingByIdAsync(floor.BuildingId);
-                building.AvailableUnits++;
-                var project = await _unitOfWork.Projects.GetProjectByIdAsync(building.ProjectId);
-                project.AvailableUnits++;
+                if (floor != null)
+                {
+                    var building = await _unitOfWork.Buildings.GetBuildingByIdAsync(floor.BuildingId);
+                    if (building != null)
+                    {
+                        building.AvailableUnits++;
+                        var project = await _unitOfWork.Projects.GetProjectByIdAsync(building.ProjectId);
+                        if (project != null)
+                        {
+                            project.AvailableUnits++;
+                        }
+                    }
+                }
             }
+
             _unitOfWork.Bookings.UpdateBooking(booking);
             await _unitOfWork.CompleteAsync();
             await _activityLogService.LogActivityAsync("حذف", "حجز", id, $"تم حذف الحجز رقم {id}", currentUserId);
+
             return true;
         }
     }

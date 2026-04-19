@@ -19,16 +19,25 @@ namespace ElRawabi_RealEstate_Backend.Repositories.Implementations
             _dbSet = context.Set<Booking>();
         }
 
-        public async Task<IEnumerable<Booking>> GetAllBookingsAsync() => await _dbSet.ToListAsync();
-        public async Task<Booking?> GetBookingByIdAsync(int id) => await _dbSet.FindAsync(id);
+        public async Task<IEnumerable<Booking>> GetAllBookingsAsync() => await _dbSet.Where(b => !b.IsDeleted).ToListAsync();
+
+        public async Task<Booking?> GetBookingByIdAsync(int id) => await _dbSet.FirstOrDefaultAsync(b => b.Id == id && !b.IsDeleted);
+
         public async Task AddBookingAsync(Booking booking) => await _dbSet.AddAsync(booking);
+
         public void UpdateBooking(Booking booking) => _dbSet.Update(booking);
-        public void DeleteBooking(Booking booking) => _dbSet.Remove(booking); // Consider soft delete logic here if applicable
+
+        public void DeleteBooking(Booking booking)
+        {
+            booking.IsDeleted = true;
+            _dbSet.Update(booking);
+        }
+
         public async Task SaveChangesAsync() => await _context.SaveChangesAsync();
 
         public async Task<IEnumerable<Booking>> GetBookingsByBuyerIdAsync(int buyerId)
         {
-            return await _dbSet.Where(b => b.BuyerId == buyerId).ToListAsync();
+            return await _dbSet.Where(b => b.BuyerId == buyerId && !b.IsDeleted).ToListAsync();
         }
 
         public async Task<Booking?> GetBookingWithDetailsAsync(int bookingId)
@@ -36,7 +45,7 @@ namespace ElRawabi_RealEstate_Backend.Repositories.Implementations
             return await _dbSet
                 .Include(b => b.Buyer)
                 .Include(b => b.Unit)
-                .FirstOrDefaultAsync(b => b.Id == bookingId);
+                .FirstOrDefaultAsync(b => b.Id == bookingId && !b.IsDeleted);
         }
     }
 }

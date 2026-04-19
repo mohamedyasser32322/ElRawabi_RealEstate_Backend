@@ -18,5 +18,6 @@ namespace ElRawabi_RealEstate_Backend.DTOs.Requests
         [Required, Range(0, double.MaxValue)]
         public decimal Price { get; set; }
         public int FloorId { get; set; }
+        public int? BuyerId { get; set; }
     }
 }

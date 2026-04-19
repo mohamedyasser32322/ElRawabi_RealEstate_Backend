@@ -51,7 +51,7 @@ namespace ElRawabi_RealEstate_Backend.Data
                 .IsUnique();
 
             modelBuilder.Entity<Unit>()
-                .HasIndex(u => u.UnitNumber)
+                .HasIndex(u => new { u.UnitNumber, u.FloorId })
                 .IsUnique();
 
             modelBuilder.Entity<Unit>()

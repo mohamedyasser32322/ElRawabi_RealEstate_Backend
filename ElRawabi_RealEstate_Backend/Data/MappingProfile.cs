@@ -99,8 +99,9 @@ namespace ElRawabi_RealEstate_Backend.Mappings
             CreateMap<Floor, FloorResponseDto>()
                 .ForMember(dest => dest.Units, opt => opt.MapFrom(src => src.Units.Where(u => !u.IsDeleted)))
                 .ForMember(dest => dest.BuildingName, opt => opt.MapFrom(src => src.Building != null ? src.Building.Name : string.Empty));
-
-            CreateMap<UnitRequestDto, Unit>();
+            
+            CreateMap<UnitRequestDto, Unit>()
+                 .ForMember(dest => dest.BuyerId, opt => opt.MapFrom(src => src.BuyerId));
             CreateMap<Unit, UnitResponseDto>()
                 .ForMember(dest => dest.FloorNumber, opt => opt.MapFrom(src => src.Floor != null ? src.Floor.FloorNumber : 0));
 
