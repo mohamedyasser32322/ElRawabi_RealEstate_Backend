@@ -73,6 +73,9 @@ namespace ElRawabi_RealEstate_Backend.Controllers
             if (file.Length > 5 * 1024 * 1024)
                 return BadRequest(new { message = "حجم الملف يتجاوز 5MB" });
 
+            if (!IsValidImage(file))
+                return BadRequest(new { message = "محتوى الملف غير صحيح" });
+
             var folder = Path.Combine(GetWebRoot(), "uploads", "stages");
             Directory.CreateDirectory(folder);
 
@@ -135,6 +138,22 @@ namespace ElRawabi_RealEstate_Backend.Controllers
                 oldValues: oldSnapshot);
 
             return Ok();
+        }
+
+        private static bool IsValidImage(IFormFile file)
+        {
+            using var stream = file.OpenReadStream();
+            var header = new byte[4];
+            stream.Read(header, 0, 4);
+
+            // JPEG: FF D8 FF
+            if (header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF) return true;
+            // PNG: 89 50 4E 47
+            if (header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47) return true;
+            // WEBP: 52 49 46 46
+            if (header[0] == 0x52 && header[1] == 0x49 && header[2] == 0x46 && header[3] == 0x46) return true;
+
+            return false;
         }
     }
 }

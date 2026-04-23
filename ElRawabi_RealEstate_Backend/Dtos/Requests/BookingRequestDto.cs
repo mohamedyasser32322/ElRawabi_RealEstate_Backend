@@ -10,6 +10,7 @@ namespace ElRawabi_RealEstate_Backend.DTOs.Requests
         public decimal AmountPaid { get; set; }
         [Range(0, double.MaxValue)]
         public decimal RemainingAmount { get; set; }
+        [FutureDate]
         public DateTime? ExpectedCompletionDate { get; set; }
         public int BuyerId { get; set; }
         public int UnitId { get; set; }

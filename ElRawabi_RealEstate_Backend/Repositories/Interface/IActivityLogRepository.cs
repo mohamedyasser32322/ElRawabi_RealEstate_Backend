@@ -1,4 +1,5 @@
-﻿using ElRawabi_RealEstate_Backend.Modals;
+﻿using ElRawabi_RealEstate_Backend.Dtos.Requests;
+using ElRawabi_RealEstate_Backend.Modals;
 
 namespace ElRawabi_RealEstate_Backend.Repositories.Interface
 {
@@ -11,5 +12,6 @@ namespace ElRawabi_RealEstate_Backend.Repositories.Interface
         void DeleteActivityLog(ActivityLog activityLog);
         Task SaveChangesAsync();
         Task<IEnumerable<ActivityLog>> GetActivityLogsByUserIdAsync(int userId);
+        Task<(IEnumerable<ActivityLog> Items, int TotalCount, int CreateCount, int UpdateCount, int DeleteCount)> GetFilteredActivityLogsAsync(ActivityLogParamsDto filter);
     }
 }

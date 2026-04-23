@@ -35,6 +35,15 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
 
         public async Task<UserResponseDto> CreateUserAsync(UserCreateRequestDto userDto, int? currentUserId)
         {
+
+            var existingActiveUser = await _unitOfWork.Users.GetUserByEmailAsync(userDto.Email);
+            if (existingActiveUser != null)
+                throw new InvalidOperationException("البريد الإلكتروني مستخدم بالفعل لدى مستخدم آخر");
+
+            var role = await _unitOfWork.Roles.GetRoleByIdAsync(userDto.RoleId);
+            if (role == null)
+                throw new InvalidOperationException("الدور الوظيفي المحدد غير موجود");
+
             var user = _mapper.Map<User>(userDto);
             user.HashPassword = PasswordHelper.HashPassword(userDto.Password);
             await _unitOfWork.Users.AddUserAsync(user);
@@ -55,6 +64,15 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
         {
             var user = await _unitOfWork.Users.GetUserByIdAsync(id);
             if (user == null) return false;
+
+      
+            var existingActiveUser = await _unitOfWork.Users.GetUserByEmailAsync(userDto.Email);
+            if (existingActiveUser != null && existingActiveUser.Id != id)
+                throw new InvalidOperationException("البريد الإلكتروني مستخدم بالفعل لدى مستخدم آخر");
+
+            var role = await _unitOfWork.Roles.GetRoleByIdAsync(userDto.RoleId);
+            if (role == null)
+                throw new InvalidOperationException("الدور الوظيفي المحدد غير موجود");
 
             var oldSnapshot = new { user.FirstName, user.LastName, user.Email, user.RoleId };
 

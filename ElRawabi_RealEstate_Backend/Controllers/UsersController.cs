@@ -16,10 +16,41 @@ namespace ElRawabi_RealEstate_Backend.Controllers
 
         private int? CurrentUserId => int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var id) ? id : null;
 
-        [HttpGet] public async Task<IActionResult> GetAll() => Ok(await _userService.GetAllUsersAsync());
-        [HttpGet("{id}")] public async Task<IActionResult> GetById(int id) => Ok(await _userService.GetUserByIdAsync(id));
-        [HttpPost] public async Task<IActionResult> Create([FromBody] UserCreateRequestDto dto) => Ok(await _userService.CreateUserAsync(dto, CurrentUserId));
-        [HttpPut("{id}")] public async Task<IActionResult> Update(int id, [FromBody] UserUpdateRequestDto dto) => Ok(await _userService.UpdateUserAsync(id, dto, CurrentUserId));
-        [HttpDelete("{id}")] public async Task<IActionResult> Delete(int id) => Ok(await _userService.DeleteUserAsync(id, CurrentUserId));
+        [HttpGet]
+        public async Task<IActionResult> GetAll() => Ok(await _userService.GetAllUsersAsync());
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id) => Ok(await _userService.GetUserByIdAsync(id));
+
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] UserCreateRequestDto dto)
+        {
+            try
+            {
+                var result = await _userService.CreateUserAsync(dto, CurrentUserId);
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex) when (ex.Message == "email_duplicate")
+            {
+                return Conflict(new { message = "البريد الإلكتروني مسجل مسبقاً" });
+            }
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, [FromBody] UserUpdateRequestDto dto)
+        {
+            try
+            {
+                var result = await _userService.UpdateUserAsync(id, dto, CurrentUserId);
+                return result ? Ok(result) : NotFound();
+            }
+            catch (InvalidOperationException ex) when (ex.Message == "email_duplicate")
+            {
+                return Conflict(new { message = "البريد الإلكتروني مسجل مسبقاً" });
+            }
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id) => Ok(await _userService.DeleteUserAsync(id, CurrentUserId));
     }
 }

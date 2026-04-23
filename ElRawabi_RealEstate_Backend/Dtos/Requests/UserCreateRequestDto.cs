@@ -11,11 +11,11 @@ namespace ElRawabi_RealEstate_Backend.DTOs.Requests
         [Required, MaxLength(100)]
         public string LastName { get; set; } = string.Empty;
 
-        [Required, Gmail, MaxLength(255)]
+        [Required, EmailAddress, MaxLength(255)]
         public string Email { get; set; } = string.Empty;
 
-        [Required]
-        public string Password { get; set; } = string.Empty;
+        [Phone]
+        public string? Phone { get; set; }
 
         public int RoleId { get; set; }
     }

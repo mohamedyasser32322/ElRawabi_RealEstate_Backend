@@ -1,4 +1,6 @@
 using AutoMapper;
+using ElRawabi_RealEstate_Backend.Dtos.Requests;
+using ElRawabi_RealEstate_Backend.Dtos.Responses;
 using ElRawabi_RealEstate_Backend.DTOs.Responses;
 using ElRawabi_RealEstate_Backend.Modals;
 using ElRawabi_RealEstate_Backend.Repositories.Interface;
@@ -45,6 +47,22 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
 
             await _unitOfWork.ActivityLogs.AddActivityLogAsync(log);
             await _unitOfWork.CompleteAsync();
+        }
+
+        public async Task<PagedLogResponseDto> GetFilteredActivityLogsAsync(ActivityLogParamsDto filter)
+        {
+            var result = await _unitOfWork.ActivityLogs.GetFilteredActivityLogsAsync(filter);
+
+            return new PagedLogResponseDto
+            {
+                Items = _mapper.Map<IEnumerable<ActivityLogResponseDto>>(result.Items),
+                TotalCount = result.TotalCount,
+                PageNumber = filter.PageNumber,
+                PageSize = filter.PageSize,
+                CreateCount = result.CreateCount,
+                UpdateCount = result.UpdateCount,
+                DeleteCount = result.DeleteCount
+            };
         }
     }
 }
