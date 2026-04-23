@@ -31,47 +31,57 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
 
         public async Task<BookingResponseDto> CreateBookingAsync(BookingRequestDto bookingDto, int? currentUserId)
         {
-            var booking = _mapper.Map<Booking>(bookingDto);
-            await _unitOfWork.Bookings.AddBookingAsync(booking);
-            await _unitOfWork.CompleteAsync();
-
-            var unit = await _unitOfWork.Units.GetUnitByIdAsync(bookingDto.UnitId);
-            if (unit != null)
+            await _unitOfWork.BeginTransactionAsync();
+            try
             {
-                unit.Status = UnitStatus.Reserved;
-                unit.BuyerId = bookingDto.BuyerId;
-                unit.BookingId = booking.Id;
+                var booking = _mapper.Map<Booking>(bookingDto);
+                await _unitOfWork.Bookings.AddBookingAsync(booking);
+                await _unitOfWork.CompleteAsync();
 
-                var floor = await _unitOfWork.Floors.GetFloorByIdAsync(unit.FloorId);
-                if (floor != null)
+                var unit = await _unitOfWork.Units.GetUnitByIdAsync(bookingDto.UnitId);
+                if (unit != null)
                 {
-                    var building = await _unitOfWork.Buildings.GetBuildingByIdAsync(floor.BuildingId);
-                    if (building != null)
+                    unit.Status = UnitStatus.Reserved;
+                    unit.BuyerId = bookingDto.BuyerId;
+                    unit.BookingId = booking.Id;
+
+                    var floor = await _unitOfWork.Floors.GetFloorByIdAsync(unit.FloorId);
+                    if (floor != null)
                     {
-                        building.AvailableUnits--;
-                        var project = await _unitOfWork.Projects.GetProjectByIdAsync(building.ProjectId);
-                        if (project != null) project.AvailableUnits--;
+                        var building = await _unitOfWork.Buildings.GetBuildingByIdAsync(floor.BuildingId);
+                        if (building != null)
+                        {
+                            building.AvailableUnits--;
+                            var project = await _unitOfWork.Projects.GetProjectByIdAsync(building.ProjectId);
+                            if (project != null) project.AvailableUnits--;
+                        }
                     }
                 }
+
+                await _unitOfWork.CompleteAsync();
+                await _unitOfWork.CommitTransactionAsync();
+
+                var newSnapshot = new
+                {
+                    UnitId = booking.UnitId,
+                    BuyerId = booking.BuyerId,
+                    Status = booking.Status.ToString(),
+                    BookingDate = booking.BookingDate
+                };
+
+                await _activityLogService.LogActivityAsync(
+                    "إضافة", "حجز", booking.Id,
+                    $"حجز وحدة رقم {booking.UnitId} للعميل {booking.BuyerId}",
+                    currentUserId,
+                    newValues: newSnapshot);
+
+                return _mapper.Map<BookingResponseDto>(booking);
             }
-
-            await _unitOfWork.CompleteAsync();
-
-            var newSnapshot = new
+            catch
             {
-                UnitId = booking.UnitId,
-                BuyerId = booking.BuyerId,
-                Status = booking.Status.ToString(),
-                BookingDate = booking.BookingDate
-            };
-
-            await _activityLogService.LogActivityAsync(
-                "إضافة", "حجز", booking.Id,
-                $"حجز وحدة رقم {booking.UnitId} للعميل {booking.BuyerId}",
-                currentUserId,
-                newValues: newSnapshot);
-
-            return _mapper.Map<BookingResponseDto>(booking);
+                await _unitOfWork.RollbackTransactionAsync();
+                throw;
+            }
         }
 
         public async Task<bool> UpdateBookingAsync(int id, BookingRequestDto bookingDto, int? currentUserId)

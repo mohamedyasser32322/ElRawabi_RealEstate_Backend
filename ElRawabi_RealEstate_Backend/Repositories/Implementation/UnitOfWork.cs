@@ -1,11 +1,13 @@
 ﻿using ElRawabi_RealEstate_Backend.Data;
 using ElRawabi_RealEstate_Backend.Repositories.Interface;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace ElRawabi_RealEstate_Backend.Repositories.Implementations
 {
     public class UnitOfWork : IUnitOfWork
     {
         private readonly ElRawabiRealEstateDbContext _context;
+        private IDbContextTransaction? _transaction;
 
         public IProjectRepository Projects { get; private set; }
         public IUserRepository Users { get; private set; }
@@ -42,7 +44,33 @@ namespace ElRawabi_RealEstate_Backend.Repositories.Implementations
         public async Task<int> CompleteAsync()
             => await _context.SaveChangesAsync();
 
+        public async Task BeginTransactionAsync()
+            => _transaction = await _context.Database.BeginTransactionAsync();
+
+        public async Task CommitTransactionAsync()
+        {
+            if (_transaction != null)
+            {
+                await _transaction.CommitAsync();
+                await _transaction.DisposeAsync();
+                _transaction = null;
+            }
+        }
+
+        public async Task RollbackTransactionAsync()
+        {
+            if (_transaction != null)
+            {
+                await _transaction.RollbackAsync();
+                await _transaction.DisposeAsync();
+                _transaction = null;
+            }
+        }
+
         public void Dispose()
-            => _context.Dispose();
+        {
+            _transaction?.Dispose();
+            _context.Dispose();
+        }
     }
 }
