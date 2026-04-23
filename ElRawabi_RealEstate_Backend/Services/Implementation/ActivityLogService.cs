@@ -3,6 +3,7 @@ using ElRawabi_RealEstate_Backend.DTOs.Responses;
 using ElRawabi_RealEstate_Backend.Modals;
 using ElRawabi_RealEstate_Backend.Repositories.Interface;
 using ElRawabi_RealEstate_Backend.Services.Interface;
+using System.Text.Json;
 
 namespace ElRawabi_RealEstate_Backend.Services.Implementation
 {
@@ -17,12 +18,14 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
             _mapper = mapper;
         }
 
-        public async Task<IEnumerable<ActivityLogResponseDto>> GetAllActivityLogsAsync() => _mapper.Map<IEnumerable<ActivityLogResponseDto>>(await _unitOfWork.ActivityLogs.GetAllActivityLogsAsync());
-        public async Task<ActivityLogResponseDto?> GetActivityLogByIdAsync(int id) => _mapper.Map<ActivityLogResponseDto>(await _unitOfWork.ActivityLogs.GetActivityLogByIdAsync(id));
+        public async Task<IEnumerable<ActivityLogResponseDto>> GetAllActivityLogsAsync() =>
+            _mapper.Map<IEnumerable<ActivityLogResponseDto>>(await _unitOfWork.ActivityLogs.GetAllActivityLogsAsync());
 
-        public async Task LogActivityAsync(string action, string entity, int entityId, string? details, int? userId)
+        public async Task<ActivityLogResponseDto?> GetActivityLogByIdAsync(int id) =>
+            _mapper.Map<ActivityLogResponseDto>(await _unitOfWork.ActivityLogs.GetActivityLogByIdAsync(id));
+
+        public async Task LogActivityAsync(string action, string entity, int entityId, string? details, int? userId, object? oldValues = null, object? newValues = null)
         {
-           
             var saudiTime = TimeZoneInfo.ConvertTimeFromUtc(
                 DateTime.UtcNow,
                 TimeZoneInfo.FindSystemTimeZoneById("Arab Standard Time")
@@ -35,7 +38,9 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
                 EntityId = entityId,
                 Details = details,
                 UserId = userId,
-                Timestamp = saudiTime  
+                Timestamp = saudiTime,
+                OldValues = oldValues != null ? JsonSerializer.Serialize(oldValues) : null,
+                NewValues = newValues != null ? JsonSerializer.Serialize(newValues) : null
             };
 
             await _unitOfWork.ActivityLogs.AddActivityLogAsync(log);

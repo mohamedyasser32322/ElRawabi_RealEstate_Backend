@@ -1,10 +1,10 @@
 using AutoMapper;
 using ElRawabi_RealEstate_Backend.DTOs.Requests;
 using ElRawabi_RealEstate_Backend.DTOs.Responses;
+using ElRawabi_RealEstate_Backend.Helpers;
 using ElRawabi_RealEstate_Backend.Modals;
 using ElRawabi_RealEstate_Backend.Repositories.Interface;
 using ElRawabi_RealEstate_Backend.Services.Interface;
-using ElRawabi_RealEstate_Backend.Helpers;
 
 namespace ElRawabi_RealEstate_Backend.Services.Implementation
 {
@@ -39,7 +39,15 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
             user.HashPassword = PasswordHelper.HashPassword(userDto.Password);
             await _unitOfWork.Users.AddUserAsync(user);
             await _unitOfWork.CompleteAsync();
-            await _activityLogService.LogActivityAsync("إضافة", "مستخدم", user.Id, $"تم إضافة مستخدم جديد: {user.FirstName} {user.LastName}", currentUserId);
+
+            var newSnapshot = new { user.FirstName, user.LastName, user.Email, user.RoleId };
+
+            await _activityLogService.LogActivityAsync(
+                "إضافة", "مستخدم", user.Id,
+                $"إضافة مستخدم جديد: {user.FirstName} {user.LastName}",
+                currentUserId,
+                newValues: newSnapshot);
+
             return _mapper.Map<UserResponseDto>(user);
         }
 
@@ -47,10 +55,22 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
         {
             var user = await _unitOfWork.Users.GetUserByIdAsync(id);
             if (user == null) return false;
+
+            var oldSnapshot = new { user.FirstName, user.LastName, user.Email, user.RoleId };
+
             _mapper.Map(userDto, user);
             _unitOfWork.Users.UpdateUser(user);
             await _unitOfWork.CompleteAsync();
-            await _activityLogService.LogActivityAsync("تعديل", "مستخدم", id, $"تم تعديل بيانات المستخدم {user.FirstName}", currentUserId);
+
+            var newSnapshot = new { user.FirstName, user.LastName, user.Email, user.RoleId };
+
+            await _activityLogService.LogActivityAsync(
+                "تعديل", "مستخدم", id,
+                $"تعديل بيانات المستخدم {user.FirstName} {user.LastName}",
+                currentUserId,
+                oldValues: oldSnapshot,
+                newValues: newSnapshot);
+
             return true;
         }
 
@@ -58,10 +78,19 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
         {
             var user = await _unitOfWork.Users.GetUserByIdAsync(id);
             if (user == null) return false;
+
+            var oldSnapshot = new { user.FirstName, user.LastName, user.Email, user.RoleId };
+
             user.IsDeleted = true;
             _unitOfWork.Users.UpdateUser(user);
             await _unitOfWork.CompleteAsync();
-            await _activityLogService.LogActivityAsync("حذف", "مستخدم", id, $"تم حذف المستخدم {user.FirstName}", currentUserId);
+
+            await _activityLogService.LogActivityAsync(
+                "حذف", "مستخدم", id,
+                $"حذف المستخدم {user.FirstName} {user.LastName}",
+                currentUserId,
+                oldValues: oldSnapshot);
+
             return true;
         }
     }

@@ -19,9 +19,11 @@ public class BuildingsController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> GetAll() => Ok(await _buildingService.GetAllBuildingsAsync());
 
     [HttpGet("{id}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetById(int id)
     {
         var building = await _buildingService.GetBuildingByIdAsync(id);

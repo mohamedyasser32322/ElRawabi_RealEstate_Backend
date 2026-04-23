@@ -19,9 +19,11 @@ public class UnitsController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> GetAll() => Ok(await _unitService.GetAllUnitsAsync());
 
     [HttpGet("{id}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetById(int id)
     {
         var unit = await _unitService.GetUnitByIdAsync(id);

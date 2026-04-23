@@ -22,6 +22,7 @@ namespace ElRawabi_RealEstate_Backend.Repositories.Implementations
         public async Task<IEnumerable<Unit>> GetAllUnitsAsync()
         {
             return await _dbSet
+                .Where(u => !u.IsDeleted)
                 .Include(u => u.Floor)
                 .Include(u => u.Booking)
                 .ToListAsync();
@@ -32,7 +33,7 @@ namespace ElRawabi_RealEstate_Backend.Repositories.Implementations
             return await _dbSet
                 .Include(u => u.Floor)
                 .Include(u => u.Booking)
-                .FirstOrDefaultAsync(u => u.Id == id);
+                .FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
         }
 
         public async Task AddUnitAsync(Unit unit) => await _dbSet.AddAsync(unit);
@@ -43,7 +44,7 @@ namespace ElRawabi_RealEstate_Backend.Repositories.Implementations
         public async Task<IEnumerable<Unit>> GetUnitsByFloorIdAsync(int floorId)
         {
             return await _dbSet
-                .Where(u => u.FloorId == floorId)
+                .Where(u => u.FloorId == floorId && !u.IsDeleted)
                 .Include(u => u.Floor)
                 .Include(u => u.Booking)
                 .ToListAsync();

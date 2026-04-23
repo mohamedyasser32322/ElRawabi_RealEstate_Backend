@@ -23,7 +23,8 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
         public async Task<IEnumerable<BuildingImageResponseDto>> GetAllBuildingImagesAsync()
         {
             var images = await _unitOfWork.BuildingImages.GetAllBuildingImagesAsync();
-            return _mapper.Map<IEnumerable<BuildingImageResponseDto>>(images.Where(img => !string.IsNullOrEmpty(img.ImageUrl) && File.Exists(img.ImageUrl)));
+            return _mapper.Map<IEnumerable<BuildingImageResponseDto>>(
+                images.Where(img => !string.IsNullOrEmpty(img.ImageUrl) && File.Exists(img.ImageUrl)));
         }
 
         public async Task<BuildingImageResponseDto?> GetBuildingImageByIdAsync(int id)
@@ -38,7 +39,15 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
             var image = _mapper.Map<BuildingImage>(imageDto);
             await _unitOfWork.BuildingImages.AddBuildingImageAsync(image);
             await _unitOfWork.CompleteAsync();
-            await _activityLogService.LogActivityAsync("إضافة", "صورة", image.Id, $"تم إضافة صورة للعمارة {image.BuildingId}", currentUserId);
+
+            var newSnapshot = new { image.BuildingId, image.ImageUrl };
+
+            await _activityLogService.LogActivityAsync(
+                "إضافة", "صورة مبنى", image.Id,
+                $"إضافة صورة للمبنى {image.BuildingId}",
+                currentUserId,
+                newValues: newSnapshot);
+
             return _mapper.Map<BuildingImageResponseDto>(image);
         }
 
@@ -46,10 +55,22 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
         {
             var image = await _unitOfWork.BuildingImages.GetBuildingImageByIdAsync(id);
             if (image == null) return false;
+
+            var oldSnapshot = new { image.BuildingId, image.ImageUrl };
+
             _mapper.Map(imageDto, image);
             _unitOfWork.BuildingImages.UpdateBuildingImage(image);
             await _unitOfWork.CompleteAsync();
-            await _activityLogService.LogActivityAsync("تعديل", "صورة", id, $"تم تعديل بيانات الصورة رقم {id}", currentUserId);
+
+            var newSnapshot = new { image.BuildingId, image.ImageUrl };
+
+            await _activityLogService.LogActivityAsync(
+                "تعديل", "صورة مبنى", id,
+                $"تعديل صورة المبنى رقم {id}",
+                currentUserId,
+                oldValues: oldSnapshot,
+                newValues: newSnapshot);
+
             return true;
         }
 
@@ -57,10 +78,19 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
         {
             var image = await _unitOfWork.BuildingImages.GetBuildingImageByIdAsync(id);
             if (image == null) return false;
+
+            var oldSnapshot = new { image.BuildingId, image.ImageUrl };
+
             image.IsDeleted = true;
             _unitOfWork.BuildingImages.UpdateBuildingImage(image);
             await _unitOfWork.CompleteAsync();
-            await _activityLogService.LogActivityAsync("حذف", "صورة", id, $"تم حذف الصورة رقم {id}", currentUserId);
+
+            await _activityLogService.LogActivityAsync(
+                "حذف", "صورة مبنى", id,
+                $"حذف صورة المبنى رقم {id}",
+                currentUserId,
+                oldValues: oldSnapshot);
+
             return true;
         }
     }

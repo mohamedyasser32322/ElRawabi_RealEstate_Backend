@@ -6,7 +6,7 @@ namespace ElRawabi_RealEstate_Backend.Data
     public class ElRawabiRealEstateDbContext : DbContext
     {
         public ElRawabiRealEstateDbContext(DbContextOptions<ElRawabiRealEstateDbContext> options) : base(options) { }
-        // Tables
+
         public DbSet<User> Users { get; set; }
         public DbSet<Buyer> Buyers { get; set; }
         public DbSet<Role> Roles { get; set; }
@@ -19,40 +19,46 @@ namespace ElRawabi_RealEstate_Backend.Data
         public DbSet<BuildingImage> BuildingImages { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<ActivityLog> ActivityLogs { get; set; }
-
+        public DbSet<StageImage> StageImages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Unique Fields
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.Email)
-                .IsUnique();
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
 
             modelBuilder.Entity<Buyer>()
                 .HasIndex(b => b.Email)
-                .IsUnique();
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
 
             modelBuilder.Entity<Buyer>()
                 .HasIndex(b => b.PhoneNumber)
-                .IsUnique();
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
 
             modelBuilder.Entity<Buyer>()
                 .HasIndex(b => b.NationalId)
-                .IsUnique();
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
 
             modelBuilder.Entity<Project>()
                 .HasIndex(p => p.Name)
-                .IsUnique();
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
 
             modelBuilder.Entity<Role>()
                 .HasIndex(r => r.RoleName)
-                .IsUnique();
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
 
             modelBuilder.Entity<Unit>()
                 .HasIndex(u => new { u.UnitNumber, u.FloorId })
-                .IsUnique();
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
 
             modelBuilder.Entity<Unit>()
                 .Property(u => u.Area)
@@ -74,7 +80,6 @@ namespace ElRawabi_RealEstate_Backend.Data
                 .Property(b => b.Progress)
                 .HasPrecision(18, 2);
 
-            // Deleted Filter
             modelBuilder.Entity<User>().HasQueryFilter(u => !u.IsDeleted);
             modelBuilder.Entity<Buyer>().HasQueryFilter(b => !b.IsDeleted);
             modelBuilder.Entity<Role>().HasQueryFilter(r => !r.IsDeleted);
@@ -87,9 +92,8 @@ namespace ElRawabi_RealEstate_Backend.Data
             modelBuilder.Entity<BuildingImage>().HasQueryFilter(i => !i.IsDeleted);
             modelBuilder.Entity<Notification>().HasQueryFilter(n => !n.IsDeleted);
             modelBuilder.Entity<ActivityLog>().HasQueryFilter(a => !a.IsDeleted);
+            modelBuilder.Entity<StageImage>().HasQueryFilter(si => !si.IsDeleted);
 
-
-            //Relationships
             modelBuilder.Entity<User>()
                 .HasOne(u => u.Role)
                 .WithMany(r => r.Users)
@@ -125,7 +129,7 @@ namespace ElRawabi_RealEstate_Backend.Data
                 .WithOne(bu => bu.Project)
                 .HasForeignKey(bu => bu.ProjectId)
                 .OnDelete(DeleteBehavior.Restrict);
-            
+
             modelBuilder.Entity<Building>()
                 .HasMany(bu => bu.Stages)
                 .WithOne(s => s.Building)
@@ -138,7 +142,6 @@ namespace ElRawabi_RealEstate_Backend.Data
                 .HasForeignKey(f => f.BuildingId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            
             modelBuilder.Entity<Building>()
                 .HasMany(bu => bu.Images)
                 .WithOne(i => i.Building)
@@ -156,6 +159,12 @@ namespace ElRawabi_RealEstate_Backend.Data
                 .WithOne(b => b.Unit)
                 .HasForeignKey<Booking>(b => b.UnitId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<StageImage>()
+                .HasOne(si => si.ConstructionStage)
+                .WithMany(cs => cs.Images)
+                .HasForeignKey(si => si.ConstructionStageId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

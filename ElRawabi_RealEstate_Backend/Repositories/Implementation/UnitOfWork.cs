@@ -1,7 +1,5 @@
 ﻿using ElRawabi_RealEstate_Backend.Data;
 using ElRawabi_RealEstate_Backend.Repositories.Interface;
-using System;
-using System.Threading.Tasks;
 
 namespace ElRawabi_RealEstate_Backend.Repositories.Implementations
 {
@@ -21,6 +19,7 @@ namespace ElRawabi_RealEstate_Backend.Repositories.Implementations
         public IBuildingImageRepository BuildingImages { get; private set; }
         public INotificationRepository Notifications { get; private set; }
         public IRoleRepository Roles { get; private set; }
+        public IStageImageRepository StageImages { get; private set; }
 
         public UnitOfWork(ElRawabiRealEstateDbContext context)
         {
@@ -37,18 +36,13 @@ namespace ElRawabi_RealEstate_Backend.Repositories.Implementations
             BuildingImages = new BuildingImageRepository(_context);
             Notifications = new NotificationRepository(_context);
             Roles = new RoleRepository(_context);
+            StageImages = new StageImageRepository(_context);
         }
 
         public async Task<int> CompleteAsync()
-        {
-            return await _context.SaveChangesAsync();
-        }
+            => await _context.SaveChangesAsync();
 
         public void Dispose()
-        {
-            _context.Dispose();
-        }
+            => _context.Dispose();
     }
 }
-
-

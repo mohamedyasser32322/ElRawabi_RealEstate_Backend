@@ -121,18 +121,22 @@ namespace ElRawabi_RealEstate_Backend.Mappings
             CreateMap<Notification, NotificationResponseDto>();
 
             CreateMap<ActivityLog, ActivityLogResponseDto>()
-       .ForMember(dest => dest.EntityName,
-           opt => opt.MapFrom(src => src.Entity))
-       .ForMember(dest => dest.CreatedAt,
-           opt => opt.MapFrom(src => src.Timestamp))
-       .ForMember(dest => dest.UserName,
-    opt => opt.MapFrom(src => src.User != null
-        ? (src.User.FirstName + " " + src.User.LastName).Trim()
-        : src.UserId.HasValue ? $"مستخدم #{src.UserId}" : null))
-       .ForMember(dest => dest.UserRole,
-           opt => opt.MapFrom(src => src.User != null && src.User.Role != null
-               ? src.User.Role.RoleName
-               : null));
+                .ForMember(dest => dest.EntityName,
+                    opt => opt.MapFrom(src => src.Entity))
+                .ForMember(dest => dest.CreatedAt,
+                    opt => opt.MapFrom(src => src.Timestamp))
+                .ForMember(dest => dest.UserName,
+                    opt => opt.MapFrom(src => src.User != null
+                        ? (src.User.FirstName + " " + src.User.LastName).Trim()
+                        : src.UserId.HasValue ? $"مستخدم #{src.UserId}" : null))
+                .ForMember(dest => dest.UserRole,
+                    opt => opt.MapFrom(src => src.User != null && src.User.Role != null
+                        ? src.User.Role.RoleName
+                        : null))
+                .ForMember(dest => dest.OldValues,
+                    opt => opt.MapFrom(src => src.OldValues))
+                .ForMember(dest => dest.NewValues,
+                    opt => opt.MapFrom(src => src.NewValues));
         }
     }
 }

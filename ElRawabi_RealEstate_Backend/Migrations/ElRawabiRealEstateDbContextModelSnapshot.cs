@@ -47,6 +47,12 @@ namespace ElRawabi_RealEstate_Backend.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<string>("NewValues")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OldValues")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("datetime2");
 
@@ -240,14 +246,16 @@ namespace ElRawabi_RealEstate_Backend.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
 
                     b.HasIndex("NationalId")
                         .IsUnique()
-                        .HasFilter("[NationalId] IS NOT NULL");
+                        .HasFilter("[IsDeleted] = 0");
 
                     b.HasIndex("PhoneNumber")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("Buyers");
                 });
@@ -269,10 +277,16 @@ namespace ElRawabi_RealEstate_Backend.Migrations
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("IsCompleted")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
                     b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReportData")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("StageName")
@@ -413,7 +427,8 @@ namespace ElRawabi_RealEstate_Backend.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("Projects");
                 });
@@ -440,9 +455,43 @@ namespace ElRawabi_RealEstate_Backend.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("RoleName")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("Roles");
+                });
+
+            modelBuilder.Entity("ElRawabi_RealEstate_Backend.Modals.StageImage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Caption")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<int>("ConstructionStageId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConstructionStageId");
+
+                    b.ToTable("StageImages");
                 });
 
             modelBuilder.Entity("ElRawabi_RealEstate_Backend.Modals.Unit", b =>
@@ -498,7 +547,8 @@ namespace ElRawabi_RealEstate_Backend.Migrations
                     b.HasIndex("FloorId");
 
                     b.HasIndex("UnitNumber", "FloorId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("Units");
                 });
@@ -548,7 +598,8 @@ namespace ElRawabi_RealEstate_Backend.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
 
                     b.HasIndex("RoleId");
 
@@ -645,6 +696,17 @@ namespace ElRawabi_RealEstate_Backend.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("ElRawabi_RealEstate_Backend.Modals.StageImage", b =>
+                {
+                    b.HasOne("ElRawabi_RealEstate_Backend.Modals.ConstructionStage", "ConstructionStage")
+                        .WithMany("Images")
+                        .HasForeignKey("ConstructionStageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ConstructionStage");
+                });
+
             modelBuilder.Entity("ElRawabi_RealEstate_Backend.Modals.Unit", b =>
                 {
                     b.HasOne("ElRawabi_RealEstate_Backend.Modals.Floor", "Floor")
@@ -681,6 +743,11 @@ namespace ElRawabi_RealEstate_Backend.Migrations
                     b.Navigation("Bookings");
 
                     b.Navigation("Notifications");
+                });
+
+            modelBuilder.Entity("ElRawabi_RealEstate_Backend.Modals.ConstructionStage", b =>
+                {
+                    b.Navigation("Images");
                 });
 
             modelBuilder.Entity("ElRawabi_RealEstate_Backend.Modals.Floor", b =>

@@ -19,9 +19,11 @@ public class ProjectsController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> GetAll() => Ok(await _projectService.GetAllProjectsAsync());
 
     [HttpGet("{id}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetById(int id)
     {
         var project = await _projectService.GetProjectByIdAsync(id);

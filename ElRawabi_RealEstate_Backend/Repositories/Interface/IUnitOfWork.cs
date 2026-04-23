@@ -14,6 +14,7 @@
         IBuildingImageRepository BuildingImages { get; }
         INotificationRepository Notifications { get; }
         IRoleRepository Roles { get; }
+        IStageImageRepository StageImages { get; }
 
         Task<int> CompleteAsync();
     }
