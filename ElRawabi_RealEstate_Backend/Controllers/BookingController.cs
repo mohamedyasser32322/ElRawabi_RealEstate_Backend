@@ -1,4 +1,5 @@
 ﻿using ElRawabi_RealEstate_Backend.DTOs.Requests;
+using ElRawabi_RealEstate_Backend.Modals;
 using ElRawabi_RealEstate_Backend.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +11,6 @@ using System.Security.Claims;
 public class BookingsController : ControllerBase
 {
     private readonly IBookingService _bookingService;
-
     public BookingsController(IBookingService bookingService) => _bookingService = bookingService;
 
     private int? GetCurrentUserId()
@@ -30,12 +30,12 @@ public class BookingsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "Admin,BookingManager")]
     public async Task<IActionResult> Create([FromBody] BookingRequestDto dto) =>
         Ok(await _bookingService.CreateBookingAsync(dto, GetCurrentUserId()));
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "Admin,BookingManager")]
     public async Task<IActionResult> Update(int id, [FromBody] BookingRequestDto dto)
     {
         var result = await _bookingService.UpdateBookingAsync(id, dto, GetCurrentUserId());

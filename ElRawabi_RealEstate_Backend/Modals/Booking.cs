@@ -9,13 +9,6 @@ namespace ElRawabi_RealEstate_Backend.Modals
         public int Id { get; set; }
         public DateTime BookingDate { get; set; } = DateTime.UtcNow;
         public BookingStatus Status { get; set; }
-
-        [Range(0, double.MaxValue)]
-        public decimal AmountPaid { get; set; }
-
-        [Range(0, double.MaxValue)]
-        public decimal RemainingAmount { get; set; }
-
         public DateTime? ExpectedCompletionDate { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

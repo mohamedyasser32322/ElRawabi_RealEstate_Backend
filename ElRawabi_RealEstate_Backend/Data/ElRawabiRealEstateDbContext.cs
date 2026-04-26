@@ -60,20 +60,21 @@ namespace ElRawabi_RealEstate_Backend.Data
                 .IsUnique()
                 .HasFilter("[IsDeleted] = 0");
 
+            modelBuilder.Entity<ActivityLog>()
+                .HasIndex(x => x.Action);
+
+            modelBuilder.Entity<ActivityLog>()
+                .HasIndex(x => x.Timestamp);
+
+            modelBuilder.Entity<ActivityLog>()
+                .HasIndex(x => x.IsDeleted);
+
             modelBuilder.Entity<Unit>()
                 .Property(u => u.Area)
                 .HasPrecision(18, 2);
 
             modelBuilder.Entity<Unit>()
                 .Property(u => u.Price)
-                .HasPrecision(18, 2);
-
-            modelBuilder.Entity<Booking>()
-                .Property(bo => bo.AmountPaid)
-                .HasPrecision(18, 2);
-
-            modelBuilder.Entity<Booking>()
-                .Property(bo => bo.RemainingAmount)
                 .HasPrecision(18, 2);
 
             modelBuilder.Entity<Building>()
@@ -159,6 +160,11 @@ namespace ElRawabi_RealEstate_Backend.Data
                 .WithOne(b => b.Unit)
                 .HasForeignKey<Booking>(b => b.UnitId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Booking>()
+                .HasIndex(b => b.UnitId)
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
 
             modelBuilder.Entity<StageImage>()
                 .HasOne(si => si.ConstructionStage)

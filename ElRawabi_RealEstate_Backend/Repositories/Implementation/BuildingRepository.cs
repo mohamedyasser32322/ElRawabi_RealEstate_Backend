@@ -19,7 +19,6 @@ namespace ElRawabi_RealEstate_Backend.Repositories.Implementations
             _dbSet = context.Set<Building>();
         }
 
-        // التعديل هنا: إضافة Include لتحميل البيانات اللازمة لحساب العدادات
         public async Task<IEnumerable<Building>> GetAllBuildingsAsync()
         {
             return await _dbSet

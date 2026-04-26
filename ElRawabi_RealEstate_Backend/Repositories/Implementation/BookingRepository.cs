@@ -19,9 +19,20 @@ namespace ElRawabi_RealEstate_Backend.Repositories.Implementations
             _dbSet = context.Set<Booking>();
         }
 
-        public async Task<IEnumerable<Booking>> GetAllBookingsAsync() => await _dbSet.Where(b => !b.IsDeleted).ToListAsync();
+        public async Task<IEnumerable<Booking>> GetAllBookingsAsync()
+            => await _dbSet
+                .Where(b => !b.IsDeleted)
+                .Include(b => b.Buyer)
+                .Include(b => b.Unit)
+                .ToListAsync();
 
-        public async Task<Booking?> GetBookingByIdAsync(int id) => await _dbSet.FirstOrDefaultAsync(b => b.Id == id && !b.IsDeleted);
+
+        public async Task<Booking?> GetBookingByIdAsync(int id)
+            => await _dbSet
+                .Include(b => b.Buyer)
+                .Include(b => b.Unit)
+                .FirstOrDefaultAsync(b => b.Id == id && !b.IsDeleted);
+
 
         public async Task AddBookingAsync(Booking booking) => await _dbSet.AddAsync(booking);
 

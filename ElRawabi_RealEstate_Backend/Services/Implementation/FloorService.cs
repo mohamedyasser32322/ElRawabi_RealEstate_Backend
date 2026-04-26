@@ -32,11 +32,14 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
             await _unitOfWork.Floors.AddFloorAsync(floor);
             await _unitOfWork.CompleteAsync();
 
-            var newSnapshot = new { floor.FloorNumber, floor.BuildingId };
+            // ✅ جلب اسم المبنى
+            var building = await _unitOfWork.Buildings.GetBuildingByIdAsync(floor.BuildingId);
+
+            var newSnapshot = new { floor.FloorNumber, BuildingName = building?.Name };
 
             await _activityLogService.LogActivityAsync(
                 "إضافة", "دور", floor.Id,
-                $"إضافة دور رقم {floor.FloorNumber}",
+                $"إضافة دور رقم {floor.FloorNumber} في مبنى {building?.Name ?? "—"}",
                 currentUserId,
                 newValues: newSnapshot);
 
@@ -48,17 +51,20 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
             var floor = await _unitOfWork.Floors.GetFloorByIdAsync(id);
             if (floor == null) return false;
 
-            var oldSnapshot = new { floor.FloorNumber, floor.BuildingId };
+            // ✅ جلب اسم المبنى
+            var building = await _unitOfWork.Buildings.GetBuildingByIdAsync(floor.BuildingId);
+
+            var oldSnapshot = new { floor.FloorNumber, BuildingName = building?.Name };
 
             _mapper.Map(floorDto, floor);
             _unitOfWork.Floors.UpdateFloor(floor);
             await _unitOfWork.CompleteAsync();
 
-            var newSnapshot = new { floor.FloorNumber, floor.BuildingId };
+            var newSnapshot = new { floor.FloorNumber, BuildingName = building?.Name };
 
             await _activityLogService.LogActivityAsync(
                 "تعديل", "دور", id,
-                $"تعديل بيانات الدور رقم {floor.FloorNumber}",
+                $"تعديل الدور رقم {floor.FloorNumber} في مبنى {building?.Name ?? "—"}",
                 currentUserId,
                 oldValues: oldSnapshot,
                 newValues: newSnapshot);
@@ -71,7 +77,15 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
             var floor = await _unitOfWork.Floors.GetFloorByIdAsync(id);
             if (floor == null) return false;
 
-            var oldSnapshot = new { floor.FloorNumber, floor.BuildingId, UnitCount = floor.Units?.Count ?? 0 };
+            // ✅ جلب اسم المبنى
+            var building = await _unitOfWork.Buildings.GetBuildingByIdAsync(floor.BuildingId);
+
+            var oldSnapshot = new
+            {
+                floor.FloorNumber,
+                BuildingName = building?.Name,
+                UnitCount = floor.Units?.Count ?? 0
+            };
 
             foreach (var unit in floor.Units)
             {
@@ -90,7 +104,7 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
 
             await _activityLogService.LogActivityAsync(
                 "حذف", "دور", id,
-                $"حذف الدور رقم {floor.FloorNumber} مع جميع وحداته",
+                $"حذف الدور رقم {floor.FloorNumber} في مبنى {building?.Name ?? "—"} مع جميع وحداته",
                 currentUserId,
                 oldValues: oldSnapshot);
 

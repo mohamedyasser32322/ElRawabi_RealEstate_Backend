@@ -23,17 +23,21 @@ namespace ElRawabi_RealEstate_Backend.Repositories.Implementations
         public async Task<IEnumerable<ActivityLog>> GetAllActivityLogsAsync()
         {
             return await _context.ActivityLogs
+                .AsNoTracking()
                 .Include(x => x.User)
                     .ThenInclude(u => u.Role)
                 .Where(x => !x.IsDeleted)
                 .OrderByDescending(x => x.Timestamp)
                 .ToListAsync();
         }
+
         public async Task<ActivityLog?> GetActivityLogByIdAsync(int id)
             => await _context.ActivityLogs
+                .AsNoTracking()
                 .Include(x => x.User)
-                .ThenInclude(u => u.Role)
+                    .ThenInclude(u => u.Role)
                 .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+
         public async Task AddActivityLogAsync(ActivityLog activityLog) => await _dbSet.AddAsync(activityLog);
         public void UpdateActivityLog(ActivityLog activityLog) => _dbSet.Update(activityLog);
         public void DeleteActivityLog(ActivityLog activityLog) => _dbSet.Remove(activityLog);
@@ -41,14 +45,18 @@ namespace ElRawabi_RealEstate_Backend.Repositories.Implementations
 
         public async Task<IEnumerable<ActivityLog>> GetActivityLogsByUserIdAsync(int userId)
         {
-            return await _dbSet.Where(al => al.UserId == userId).ToListAsync();
+            return await _dbSet
+                .AsNoTracking()
+                .Where(al => al.UserId == userId)
+                .ToListAsync();
         }
 
         public async Task<(IEnumerable<ActivityLog> Items, int TotalCount, int CreateCount, int UpdateCount, int DeleteCount)> GetFilteredActivityLogsAsync(ActivityLogParamsDto filter)
         {
             var query = _context.ActivityLogs
+                .AsNoTracking()
                 .Include(x => x.User)
-                .ThenInclude(u => u.Role)
+                    .ThenInclude(u => u.Role)
                 .Where(x => !x.IsDeleted)
                 .AsQueryable();
 
@@ -61,11 +69,9 @@ namespace ElRawabi_RealEstate_Backend.Repositories.Implementations
                     (x.User != null && x.User.FirstName.ToLower().Contains(search)));
             }
 
-            // ── التعديل السحري: دعم الهمزات والمرادفات للحروف العربية ──
             if (!string.IsNullOrWhiteSpace(filter.Action) && filter.Action.ToLower() != "all")
             {
                 var act = filter.Action.ToLower();
-
                 if (act == "create")
                     query = query.Where(x => x.Action != null && (
                         x.Action.ToLower().Contains("create") || x.Action.ToLower().Contains("add") ||
@@ -94,20 +100,26 @@ namespace ElRawabi_RealEstate_Backend.Repositories.Implementations
                 query = query.Where(x => x.Timestamp >= filter.DateFrom.Value);
 
             if (filter.DateTo.HasValue)
-            {
-                var dateTo = filter.DateTo.Value.AddDays(1).AddTicks(-1);
-                query = query.Where(x => x.Timestamp <= dateTo);
-            }
+                query = query.Where(x => x.Timestamp <= filter.DateTo.Value.AddDays(1).AddTicks(-1));
 
-            var totalCount = await query.CountAsync();
+            // ✅ Query 1: جيب الـ actions بس عشان تعد
+            var allActions = await query
+                .Select(x => x.Action ?? "")
+                .ToListAsync();
 
-            // ── تحديث الإحصائيات لتطابق نفس الكلمات بالضبط ──
-            var actionTypes = await query.Select(x => x.Action != null ? x.Action.ToLower() : "").ToListAsync();
+            var totalCount = allActions.Count;
+            var createCount = allActions.Count(a =>
+                a.Contains("إضاف") || a.Contains("اضاف") ||
+                a.Contains("إنشا") || a.Contains("انشا") ||
+                a.ToLower().Contains("create") || a.ToLower().Contains("add"));
+            var updateCount = allActions.Count(a =>
+                a.Contains("تعديل") || a.Contains("تحديث") ||
+                a.ToLower().Contains("update") || a.ToLower().Contains("edit"));
+            var deleteCount = allActions.Count(a =>
+                a.Contains("حذف") || a.Contains("إلغاء") || a.Contains("الغاء") ||
+                a.ToLower().Contains("delete") || a.ToLower().Contains("remove"));
 
-            var createCount = actionTypes.Count(a => a.Contains("create") || a.Contains("add") || a.Contains("إضاف") || a.Contains("اضاف") || a.Contains("إنشا") || a.Contains("انشا"));
-            var updateCount = actionTypes.Count(a => a.Contains("update") || a.Contains("edit") || a.Contains("تعديل") || a.Contains("تحديث"));
-            var deleteCount = actionTypes.Count(a => a.Contains("delete") || a.Contains("remove") || a.Contains("حذف") || a.Contains("إلغاء") || a.Contains("الغاء"));
-
+            // ✅ Query 2: جيب الـ items مع كل البيانات
             var items = await query
                 .OrderByDescending(x => x.Timestamp)
                 .Skip((filter.PageNumber - 1) * filter.PageSize)

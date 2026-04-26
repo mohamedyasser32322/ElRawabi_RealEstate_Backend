@@ -33,6 +33,7 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
                 Id = user.Id,
                 Email = user.Email,
                 Role = roleName,
+                FirstName = user.FirstName,
                 Token = token
             };
         }

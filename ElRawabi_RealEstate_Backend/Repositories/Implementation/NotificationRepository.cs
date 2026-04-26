@@ -19,7 +19,9 @@ namespace ElRawabi_RealEstate_Backend.Repositories.Implementations
             _dbSet = context.Set<Notification>();
         }
 
-        public async Task<IEnumerable<Notification>> GetAllNotificationsAsync() => await _dbSet.ToListAsync();
+        public async Task<IEnumerable<Notification>> GetAllNotificationsAsync()
+            => await _dbSet.Where(n => !n.IsDeleted).ToListAsync();
+
         public async Task<Notification?> GetNotificationByIdAsync(int id) => await _dbSet.FindAsync(id);
         public async Task AddNotificationAsync(Notification notification) => await _dbSet.AddAsync(notification);
         public void UpdateNotification(Notification notification) => _dbSet.Update(notification);

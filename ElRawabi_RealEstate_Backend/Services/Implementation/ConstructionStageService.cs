@@ -240,23 +240,19 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
                 {
                     Id = i.Id,
                     ConstructionStageId = i.ConstructionStageId,
-                    // Always return a full absolute URL so the frontend never needs to guess
                     ImageUrl = BuildImageUrl(i.ImageUrl, baseUrl),
                     Caption = i.Caption,
                     CreatedAt = i.CreatedAt
                 }).ToList() ?? new()
         };
 
-        // Ensures the URL is always absolute regardless of what was stored in the DB
         private static string BuildImageUrl(string storedPath, string baseUrl)
         {
             if (string.IsNullOrEmpty(storedPath)) return string.Empty;
 
-            // Already absolute — return as-is
             if (storedPath.StartsWith("http://") || storedPath.StartsWith("https://"))
                 return storedPath;
 
-            // Relative path — prepend base URL
             return $"{baseUrl}/{storedPath.TrimStart('/')}";
         }
     }

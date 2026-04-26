@@ -1,4 +1,5 @@
 ﻿using ElRawabi_RealEstate_Backend.DTOs.Requests;
+using ElRawabi_RealEstate_Backend.Modals;
 using ElRawabi_RealEstate_Backend.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -31,12 +32,12 @@ public class UnitsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "Admin,BookingManager")]
     public async Task<IActionResult> Create([FromBody] UnitRequestDto dto) =>
         Ok(await _unitService.CreateUnitAsync(dto, GetCurrentUserId()));
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "Admin,BookingManager")]
     public async Task<IActionResult> Update(int id, [FromBody] UnitRequestDto dto)
     {
         var result = await _unitService.UpdateUnitAsync(id, dto, GetCurrentUserId());

@@ -2,9 +2,6 @@
 using ElRawabi_RealEstate_Backend.Modals;
 using ElRawabi_RealEstate_Backend.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace ElRawabi_RealEstate_Backend.Repositories.Implementations
 {
@@ -34,6 +31,15 @@ namespace ElRawabi_RealEstate_Backend.Repositories.Implementations
                 .Include(u => u.Floor)
                 .Include(u => u.Booking)
                 .FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
+        }
+
+        // ✅ ميثود جديدة — جلب وحدات العميل
+        public async Task<IEnumerable<Unit>> GetUnitsByBuyerIdAsync(int buyerId)
+        {
+            return await _dbSet
+                .Where(u => u.BuyerId == buyerId && !u.IsDeleted)
+                .Include(u => u.Booking)
+                .ToListAsync();
         }
 
         public async Task AddUnitAsync(Unit unit) => await _dbSet.AddAsync(unit);

@@ -38,11 +38,18 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
             await _unitOfWork.Buildings.AddBuildingAsync(building);
             await _unitOfWork.CompleteAsync();
 
-            var newSnapshot = new { building.Name, building.ProjectId, building.TotalUnits };
+            var project = await _unitOfWork.Projects.GetProjectByIdAsync(building.ProjectId);
+
+            var newSnapshot = new
+            {
+                building.Name,
+                ProjectName = project?.Name ?? "—",
+                building.TotalUnits
+            };
 
             await _activityLogService.LogActivityAsync(
                 "إضافة", "مبنى", building.Id,
-                $"إنشاء مبنى جديد: {building.Name}",
+                $"إنشاء مبنى جديد: {building.Name} — مشروع: {project?.Name ?? "—"}",
                 currentUserId,
                 newValues: newSnapshot);
 
@@ -54,17 +61,29 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
             var building = await _unitOfWork.Buildings.GetBuildingByIdAsync(id);
             if (building == null) return false;
 
-            var oldSnapshot = new { building.Name, building.ProjectId, building.TotalUnits };
+            var project = await _unitOfWork.Projects.GetProjectByIdAsync(building.ProjectId);
+
+            var oldSnapshot = new
+            {
+                building.Name,
+                ProjectName = project?.Name ?? "—",
+                building.TotalUnits
+            };
 
             _mapper.Map(buildingDto, building);
             _unitOfWork.Buildings.UpdateBuilding(building);
             await _unitOfWork.CompleteAsync();
 
-            var newSnapshot = new { building.Name, building.ProjectId, building.TotalUnits };
+            var newSnapshot = new
+            {
+                building.Name,
+                ProjectName = project?.Name ?? "—",
+                building.TotalUnits
+            };
 
             await _activityLogService.LogActivityAsync(
                 "تعديل", "مبنى", id,
-                $"تعديل بيانات مبنى {building.Name}",
+                $"تعديل بيانات مبنى {building.Name} — مشروع: {project?.Name ?? "—"}",
                 currentUserId,
                 oldValues: oldSnapshot,
                 newValues: newSnapshot);
@@ -77,10 +96,12 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
             var building = await _unitOfWork.Buildings.GetBuildingByIdAsync(id);
             if (building == null) return false;
 
+            var project = await _unitOfWork.Projects.GetProjectByIdAsync(building.ProjectId);
+
             var oldSnapshot = new
             {
                 building.Name,
-                building.ProjectId,
+                ProjectName = project?.Name ?? "—",
                 building.TotalUnits,
                 FloorCount = building.Floors?.Count ?? 0
             };
@@ -107,7 +128,7 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
 
             await _activityLogService.LogActivityAsync(
                 "حذف", "مبنى", id,
-                $"حذف مبنى {building.Name} مع جميع محتوياته",
+                $"حذف مبنى {building.Name} — مشروع: {project?.Name ?? "—"} — مع جميع محتوياته",
                 currentUserId,
                 oldValues: oldSnapshot);
 

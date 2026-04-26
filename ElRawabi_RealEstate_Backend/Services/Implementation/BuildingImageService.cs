@@ -34,17 +34,21 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
             return _mapper.Map<BuildingImageResponseDto>(image);
         }
 
-        public async Task<BuildingImageResponseDto> CreateBuildingImageAsync(BuildingImageRequestDto imageDto, int? currentUserId)
+        public async Task<BuildingImageResponseDto> CreateBuildingImageAsync(
+    BuildingImageRequestDto imageDto, int? currentUserId)
         {
             var image = _mapper.Map<BuildingImage>(imageDto);
             await _unitOfWork.BuildingImages.AddBuildingImageAsync(image);
             await _unitOfWork.CompleteAsync();
 
+            // ✅ جلب اسم المبنى
+            var building = await _unitOfWork.Buildings.GetBuildingByIdAsync(image.BuildingId);
+
             var newSnapshot = new { image.BuildingId, image.ImageUrl };
 
             await _activityLogService.LogActivityAsync(
                 "إضافة", "صورة مبنى", image.Id,
-                $"إضافة صورة للمبنى {image.BuildingId}",
+                $"إضافة صورة لمبنى {building?.Name ?? "—"}",  // ✅
                 currentUserId,
                 newValues: newSnapshot);
 
@@ -56,6 +60,9 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
             var image = await _unitOfWork.BuildingImages.GetBuildingImageByIdAsync(id);
             if (image == null) return false;
 
+            // ✅ جلب اسم المبنى
+            var building = await _unitOfWork.Buildings.GetBuildingByIdAsync(image.BuildingId);
+
             var oldSnapshot = new { image.BuildingId, image.ImageUrl };
 
             _mapper.Map(imageDto, image);
@@ -66,7 +73,7 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
 
             await _activityLogService.LogActivityAsync(
                 "تعديل", "صورة مبنى", id,
-                $"تعديل صورة المبنى رقم {id}",
+                $"تعديل صورة مبنى {building?.Name ?? "—"}",  // ✅
                 currentUserId,
                 oldValues: oldSnapshot,
                 newValues: newSnapshot);
@@ -79,6 +86,9 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
             var image = await _unitOfWork.BuildingImages.GetBuildingImageByIdAsync(id);
             if (image == null) return false;
 
+            // ✅ جلب اسم المبنى قبل الحذف
+            var building = await _unitOfWork.Buildings.GetBuildingByIdAsync(image.BuildingId);
+
             var oldSnapshot = new { image.BuildingId, image.ImageUrl };
 
             image.IsDeleted = true;
@@ -87,7 +97,7 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
 
             await _activityLogService.LogActivityAsync(
                 "حذف", "صورة مبنى", id,
-                $"حذف صورة المبنى رقم {id}",
+                $"حذف صورة مبنى {building?.Name ?? "—"}",  // ✅
                 currentUserId,
                 oldValues: oldSnapshot);
 

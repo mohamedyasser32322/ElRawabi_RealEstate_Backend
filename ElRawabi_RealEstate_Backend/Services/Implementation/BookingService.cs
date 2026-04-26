@@ -39,9 +39,13 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
                 await _unitOfWork.CompleteAsync();
 
                 var unit = await _unitOfWork.Units.GetUnitByIdAsync(bookingDto.UnitId);
+                var buyer = await _unitOfWork.Buyers.GetBuyerByIdAsync(bookingDto.BuyerId);
+
                 if (unit != null)
                 {
-                    unit.Status = UnitStatus.Reserved;
+                    unit.Status = bookingDto.Status == BookingStatus.Confirmed
+                        ? UnitStatus.Sold
+                        : UnitStatus.Reserved;
                     unit.BuyerId = bookingDto.BuyerId;
                     unit.BookingId = booking.Id;
 
@@ -61,6 +65,7 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
                 await _unitOfWork.CompleteAsync();
                 await _unitOfWork.CommitTransactionAsync();
 
+                // ✅ snapshot يفضل زي ما هو — بس أضفنا الأسماء للـ description
                 var newSnapshot = new
                 {
                     UnitId = booking.UnitId,
@@ -69,9 +74,12 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
                     BookingDate = booking.BookingDate
                 };
 
+                var buyerName = buyer != null ? $"{buyer.FirstName} {buyer.LastName}" : "—";
+                var unitNumber = unit?.UnitNumber ?? "—";
+
                 await _activityLogService.LogActivityAsync(
                     "إضافة", "حجز", booking.Id,
-                    $"حجز وحدة رقم {booking.UnitId} للعميل {booking.BuyerId}",
+                    $"حجز وحدة {unitNumber} للعميل {buyerName}",  // ✅
                     currentUserId,
                     newValues: newSnapshot);
 
@@ -86,31 +94,111 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
 
         public async Task<bool> UpdateBookingAsync(int id, BookingRequestDto bookingDto, int? currentUserId)
         {
-            var booking = await _unitOfWork.Bookings.GetBookingByIdAsync(id);
-            if (booking == null) return false;
-
-            var oldSnapshot = new
+            await _unitOfWork.BeginTransactionAsync();
+            try
             {
-                UnitId = booking.UnitId,
-                BuyerId = booking.BuyerId,
-                Status = booking.Status.ToString(),
-                BookingDate = booking.BookingDate
-            };
+                var booking = await _unitOfWork.Bookings.GetBookingByIdAsync(id);
+                if (booking == null) return false;
 
-            _mapper.Map(bookingDto, booking);
+                // ✅ جلب الأسماء قبل التعديل
+                var unit = await _unitOfWork.Units.GetUnitByIdAsync(booking.UnitId);
+                var buyer = await _unitOfWork.Buyers.GetBuyerByIdAsync(booking.BuyerId);
 
-            var unit = await _unitOfWork.Units.GetUnitByIdAsync(booking.UnitId);
-            if (unit != null)
+                var oldSnapshot = new
+                {
+                    UnitId = booking.UnitId,
+                    BuyerId = booking.BuyerId,
+                    Status = booking.Status.ToString(),
+                    BookingDate = booking.BookingDate
+                };
+
+                _mapper.Map(bookingDto, booking);
+
+                if (unit != null)
+                {
+                    if (unit.BuyerId != booking.BuyerId)
+                        unit.BuyerId = booking.BuyerId;
+
+                    if (booking.Status == BookingStatus.Cancelled && unit.Status != UnitStatus.Available)
+                    {
+                        unit.Status = UnitStatus.Available;
+                        unit.BuyerId = null;
+                        unit.BookingId = null;
+                        var floor = await _unitOfWork.Floors.GetFloorByIdAsync(unit.FloorId);
+                        if (floor != null)
+                        {
+                            var building = await _unitOfWork.Buildings.GetBuildingByIdAsync(floor.BuildingId);
+                            if (building != null)
+                            {
+                                building.AvailableUnits++;
+                                var project = await _unitOfWork.Projects.GetProjectByIdAsync(building.ProjectId);
+                                if (project != null) project.AvailableUnits++;
+                            }
+                        }
+                    }
+                    else if (booking.Status == BookingStatus.Confirmed)
+                        unit.Status = UnitStatus.Sold;
+                }
+
+                _unitOfWork.Bookings.UpdateBooking(booking);
+                await _unitOfWork.CompleteAsync();
+                await _unitOfWork.CommitTransactionAsync();
+
+                var newSnapshot = new
+                {
+                    UnitId = booking.UnitId,
+                    BuyerId = booking.BuyerId,
+                    Status = booking.Status.ToString(),
+                    BookingDate = booking.BookingDate
+                };
+
+                var buyerName = buyer != null ? $"{buyer.FirstName} {buyer.LastName}" : "—";
+                var unitNumber = unit?.UnitNumber ?? "—";
+
+                await _activityLogService.LogActivityAsync(
+                    "تعديل", "حجز", id,
+                    $"تعديل حجز وحدة {unitNumber} للعميل {buyerName}",  // ✅
+                    currentUserId,
+                    oldValues: oldSnapshot,
+                    newValues: newSnapshot);
+
+                return true;
+            }
+            catch
             {
-                if (unit.BuyerId != booking.BuyerId)
-                    unit.BuyerId = booking.BuyerId;
+                await _unitOfWork.RollbackTransactionAsync();
+                throw;
+            }
+        }
 
-                if (booking.Status == BookingStatus.Cancelled && unit.Status != UnitStatus.Available)
+        public async Task<bool> DeleteBookingAsync(int id, int? currentUserId)
+        {
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                var booking = await _unitOfWork.Bookings.GetBookingByIdAsync(id);
+                if (booking == null) return false;
+
+                // ✅ جلب الأسماء قبل الحذف
+                var unit = await _unitOfWork.Units.GetUnitByIdAsync(booking.UnitId);
+                var buyer = await _unitOfWork.Buyers.GetBuyerByIdAsync(booking.BuyerId);
+
+                var oldSnapshot = new
+                {
+                    UnitId = booking.UnitId,
+                    BuyerId = booking.BuyerId,
+                    Status = booking.Status.ToString(),
+                    BookingDate = booking.BookingDate
+                };
+
+                booking.IsDeleted = true;
+                _unitOfWork.Bookings.UpdateBooking(booking);
+
+                if (unit != null)
                 {
                     unit.Status = UnitStatus.Available;
                     unit.BuyerId = null;
                     unit.BookingId = null;
-
                     var floor = await _unitOfWork.Floors.GetFloorByIdAsync(unit.FloorId);
                     if (floor != null)
                     {
@@ -123,78 +211,26 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
                         }
                     }
                 }
-                else if (booking.Status == BookingStatus.Confirmed)
-                {
-                    unit.Status = UnitStatus.Sold;
-                }
+
+                await _unitOfWork.CompleteAsync();
+                await _unitOfWork.CommitTransactionAsync();
+
+                var buyerName = buyer != null ? $"{buyer.FirstName} {buyer.LastName}" : "—";
+                var unitNumber = unit?.UnitNumber ?? "—";
+
+                await _activityLogService.LogActivityAsync(
+                    "حذف", "حجز", id,
+                    $"حذف حجز وحدة {unitNumber} للعميل {buyerName}",  // ✅
+                    currentUserId,
+                    oldValues: oldSnapshot);
+
+                return true;
             }
-
-            _unitOfWork.Bookings.UpdateBooking(booking);
-            await _unitOfWork.CompleteAsync();
-
-            var newSnapshot = new
+            catch
             {
-                UnitId = booking.UnitId,
-                BuyerId = booking.BuyerId,
-                Status = booking.Status.ToString(),
-                BookingDate = booking.BookingDate
-            };
-
-            await _activityLogService.LogActivityAsync(
-                "تعديل", "حجز", id,
-                $"تعديل الحجز رقم {id}",
-                currentUserId,
-                oldValues: oldSnapshot,
-                newValues: newSnapshot);
-
-            return true;
-        }
-
-        public async Task<bool> DeleteBookingAsync(int id, int? currentUserId)
-        {
-            var booking = await _unitOfWork.Bookings.GetBookingByIdAsync(id);
-            if (booking == null) return false;
-
-            var oldSnapshot = new
-            {
-                UnitId = booking.UnitId,
-                BuyerId = booking.BuyerId,
-                Status = booking.Status.ToString(),
-                BookingDate = booking.BookingDate
-            };
-
-            booking.IsDeleted = true;
-            _unitOfWork.Bookings.UpdateBooking(booking);
-
-            var unit = await _unitOfWork.Units.GetUnitByIdAsync(booking.UnitId);
-            if (unit != null)
-            {
-                unit.Status = UnitStatus.Available;
-                unit.BuyerId = null;
-                unit.BookingId = null;
-
-                var floor = await _unitOfWork.Floors.GetFloorByIdAsync(unit.FloorId);
-                if (floor != null)
-                {
-                    var building = await _unitOfWork.Buildings.GetBuildingByIdAsync(floor.BuildingId);
-                    if (building != null)
-                    {
-                        building.AvailableUnits++;
-                        var project = await _unitOfWork.Projects.GetProjectByIdAsync(building.ProjectId);
-                        if (project != null) project.AvailableUnits++;
-                    }
-                }
+                await _unitOfWork.RollbackTransactionAsync();
+                throw;
             }
-
-            await _unitOfWork.CompleteAsync();
-
-            await _activityLogService.LogActivityAsync(
-                "حذف", "حجز", id,
-                $"حذف الحجز رقم {id} — وحدة: {booking.UnitId} — عميل: {booking.BuyerId}",
-                currentUserId,
-                oldValues: oldSnapshot);
-
-            return true;
         }
     }
 }

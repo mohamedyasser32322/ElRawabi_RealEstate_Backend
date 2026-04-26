@@ -4,6 +4,7 @@ using ElRawabi_RealEstate_Backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ElRawabi_RealEstate_Backend.Migrations
 {
     [DbContext(typeof(ElRawabiRealEstateDbContext))]
-    partial class ElRawabiRealEstateDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260425165910_FixBookingUnitIdUniqueIndexWithSoftDelete")]
+    partial class FixBookingUnitIdUniqueIndexWithSoftDelete
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -513,9 +516,6 @@ namespace ElRawabi_RealEstate_Backend.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<int>("Facing")
-                        .HasColumnType("int");
 
                     b.Property<int>("FloorId")
                         .HasColumnType("int");

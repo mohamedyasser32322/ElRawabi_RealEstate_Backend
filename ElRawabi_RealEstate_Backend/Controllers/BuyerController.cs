@@ -1,4 +1,5 @@
 ﻿using ElRawabi_RealEstate_Backend.DTOs.Requests;
+using ElRawabi_RealEstate_Backend.Modals;
 using ElRawabi_RealEstate_Backend.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -6,7 +7,7 @@ using System.Security.Claims;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin,BookingManager")]
 public class BuyersController : ControllerBase
 {
     private readonly IBuyerService _buyerService;
@@ -40,6 +41,7 @@ public class BuyersController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
         var result = await _buyerService.DeleteBuyerAsync(id, GetCurrentUserId());

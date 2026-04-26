@@ -11,6 +11,8 @@ namespace ElRawabi_RealEstate_Backend.DTOs.Requests
         public UnitType Type { get; set; }
         [Required]
         public UnitStatus Status { get; set; }
+        [Required]
+        public UnitFacing Facing { get; set; }
         [Range(0, 10000)]
         public decimal Area { get; set; }
         [Range(0, 50)]

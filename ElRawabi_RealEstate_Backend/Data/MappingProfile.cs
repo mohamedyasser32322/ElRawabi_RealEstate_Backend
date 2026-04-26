@@ -6,11 +6,11 @@ using System.Linq;
 
 namespace ElRawabi_RealEstate_Backend.Mappings
 {
+
     public class MappingProfile : Profile
     {
         public MappingProfile()
         {
-            CreateMap<ProjectRequestDto, Project>();
             CreateMap<Project, ProjectResponseDto>()
                 .ForMember(dest => dest.Buildings, opt => opt.MapFrom(src => src.Buildings.Where(b => !b.IsDeleted)))
                 .ForMember(dest => dest.TotalUnits,
@@ -49,6 +49,8 @@ namespace ElRawabi_RealEstate_Backend.Mappings
                             .SelectMany(f => f.Units)
                             .Where(u => !u.IsDeleted && u.Status == UnitStatus.Sold)
                             .Count()));
+            CreateMap<ProjectRequestDto, Project>();
+
 
             CreateMap<BuildingRequestDto, Building>();
             CreateMap<Building, BuildingResponseDto>()

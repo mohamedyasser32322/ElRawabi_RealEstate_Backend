@@ -12,5 +12,6 @@ namespace ElRawabi_RealEstate_Backend.Repositories.Interface
         Task SaveChangesAsync();
         Task<IEnumerable<Unit>> GetUnitsByFloorIdAsync(int floorId);
         Task<IEnumerable<Unit>> GetUnitsByStatusAsync(UnitStatus status);
+        Task<IEnumerable<Unit>> GetUnitsByBuyerIdAsync(int buyerId);
     }
 }

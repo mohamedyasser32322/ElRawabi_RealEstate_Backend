@@ -3,7 +3,10 @@
 namespace ElRawabi_RealEstate_Backend.Modals
 {
     public enum UnitStatus { Available = 1, Reserved = 2, Sold = 3, Closed = 4 }
-    public enum UnitType { GroundFloor = 1, TypicalFloor = 2, Roof = 3 }
+
+    public enum UnitType { Apartment = 1, Roof = 2 }
+
+    public enum UnitFacing { FrontOneStreet = 1, FrontTwoStreets = 2, Back = 3 }
 
     public class Unit
     {
@@ -17,6 +20,8 @@ namespace ElRawabi_RealEstate_Backend.Modals
 
         [Required]
         public UnitStatus Status { get; set; }
+        [Required]
+        public UnitFacing Facing { get; set; }
 
         [Range(0, 10000)]
         public decimal Area { get; set; }

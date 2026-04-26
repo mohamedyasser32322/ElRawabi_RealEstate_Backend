@@ -1,4 +1,5 @@
 ﻿using ElRawabi_RealEstate_Backend.DTOs.Requests;
+using ElRawabi_RealEstate_Backend.Modals;
 using ElRawabi_RealEstate_Backend.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -31,12 +32,12 @@ public class ProjectsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,BookingManager")]
     public async Task<IActionResult> Create([FromBody] ProjectRequestDto dto) =>
         Ok(await _projectService.CreateProjectAsync(dto, GetCurrentUserId()));
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,BookingManager")]
     public async Task<IActionResult> Update(int id, [FromBody] ProjectRequestDto dto)
     {
         var result = await _projectService.UpdateProjectAsync(id, dto, GetCurrentUserId());

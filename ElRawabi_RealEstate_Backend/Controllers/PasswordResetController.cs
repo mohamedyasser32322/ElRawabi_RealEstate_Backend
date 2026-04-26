@@ -2,6 +2,7 @@
 using ElRawabi_RealEstate_Backend.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -16,6 +17,7 @@ public class PasswordResetController : ControllerBase
     }
 
     [HttpPost("forgot")]
+    [EnableRateLimiting("login")]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto dto)
     {
         var result = await _service.SendResetTokenAsync(dto.Email);

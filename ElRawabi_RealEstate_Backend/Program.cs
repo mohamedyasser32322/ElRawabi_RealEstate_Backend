@@ -120,13 +120,24 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins(builder.Configuration["Frontend:BaseUrl"]!)
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();
+        policy.SetIsOriginAllowed(origin =>
+        {
+            var uri = new Uri(origin);
+            var host = uri.Host;
+
+            if (host == "localhost" || host == "127.0.0.1")
+                return true;
+
+            if (System.Text.RegularExpressions.Regex.IsMatch(host, @"^192\.168\.\d{1,3}\.\d{1,3}$"))
+                return true;
+
+            return false;
+        })
+        .AllowAnyMethod()
+        .AllowAnyHeader()
+        .AllowCredentials();
     });
 });
-
 builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();

@@ -59,7 +59,7 @@ namespace ElRawabi_RealEstate_Backend.Controllers
         }
 
         [HttpPost("upload")]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin,SiteEngineer")]
         public async Task<IActionResult> Upload([FromForm] int stageId, [FromForm] string? caption, IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -116,7 +116,7 @@ namespace ElRawabi_RealEstate_Backend.Controllers
         }
 
         [HttpDelete("{id:int}")]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var image = await _unitOfWork.StageImages.GetByIdAsync(id);
@@ -146,11 +146,8 @@ namespace ElRawabi_RealEstate_Backend.Controllers
             var header = new byte[4];
             stream.Read(header, 0, 4);
 
-            // JPEG: FF D8 FF
             if (header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF) return true;
-            // PNG: 89 50 4E 47
             if (header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47) return true;
-            // WEBP: 52 49 46 46
             if (header[0] == 0x52 && header[1] == 0x49 && header[2] == 0x46 && header[3] == 0x46) return true;
 
             return false;

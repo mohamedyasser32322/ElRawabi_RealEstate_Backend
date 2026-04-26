@@ -1,4 +1,5 @@
 ﻿using ElRawabi_RealEstate_Backend.DTOs.Requests;
+using ElRawabi_RealEstate_Backend.Modals;
 using ElRawabi_RealEstate_Backend.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -31,12 +32,12 @@ public class BuildingsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "Admin,BookingManager")]
     public async Task<IActionResult> Create([FromBody] BuildingRequestDto dto) =>
         Ok(await _buildingService.CreateBuildingAsync(dto, GetCurrentUserId()));
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "Admin,BookingManager")]
     public async Task<IActionResult> Update(int id, [FromBody] BuildingRequestDto dto)
     {
         var result = await _buildingService.UpdateBuildingAsync(id, dto, GetCurrentUserId());

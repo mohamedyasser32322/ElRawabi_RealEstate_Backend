@@ -19,7 +19,9 @@ namespace ElRawabi_RealEstate_Backend.Repositories.Implementations
             _dbSet = context.Set<BuildingImage>();
         }
 
-        public async Task<IEnumerable<BuildingImage>> GetAllBuildingImagesAsync() => await _dbSet.ToListAsync();
+        public async Task<IEnumerable<BuildingImage>> GetAllBuildingImagesAsync()
+             => await _dbSet.Where(bi => !bi.IsDeleted).ToListAsync();
+
         public async Task<BuildingImage?> GetBuildingImageByIdAsync(int id) => await _dbSet.FindAsync(id);
         public async Task AddBuildingImageAsync(BuildingImage buildingImage) => await _dbSet.AddAsync(buildingImage);
         public void UpdateBuildingImage(BuildingImage buildingImage) => _dbSet.Update(buildingImage);

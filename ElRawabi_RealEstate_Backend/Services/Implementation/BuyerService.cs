@@ -55,7 +55,12 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
 
             var oldSnapshot = new { buyer.FirstName, buyer.LastName, buyer.Email, buyer.PhoneNumber };
 
+            var currentPassword = buyer.HashPassword;
             _mapper.Map(buyerDto, buyer);
+            buyer.HashPassword = !string.IsNullOrWhiteSpace(buyerDto.Password)
+                ? PasswordHelper.HashPassword(buyerDto.Password)
+                : currentPassword;
+
             _unitOfWork.Buyers.UpdateBuyer(buyer);
             await _unitOfWork.CompleteAsync();
 
@@ -78,13 +83,39 @@ namespace ElRawabi_RealEstate_Backend.Services.Implementation
 
             var oldSnapshot = new { buyer.FirstName, buyer.LastName, buyer.Email, buyer.PhoneNumber };
 
+            // ✅ جلب كل الوحدات المرتبطة بالعميل وتحريرها
+            var buyerUnits = await _unitOfWork.Units.GetUnitsByBuyerIdAsync(id);
+            var releasedCount = 0;
+
+            foreach (var unit in buyerUnits)
+            {
+                // إلغاء الحجز المرتبط إن وجد
+                if (unit.BookingId.HasValue)
+                {
+                    var booking = await _unitOfWork.Bookings.GetBookingByIdAsync(unit.BookingId.Value);
+                    if (booking != null)
+                    {
+                        booking.IsDeleted = true;
+                        _unitOfWork.Bookings.UpdateBooking(booking);
+                    }
+                }
+
+                // إرجاع الوحدة لحالة متاح
+                unit.Status = UnitStatus.Available;
+                unit.BuyerId = null;
+                unit.BookingId = null;
+                _unitOfWork.Units.UpdateUnit(unit);
+                releasedCount++;
+            }
+
             buyer.IsDeleted = true;
             _unitOfWork.Buyers.UpdateBuyer(buyer);
             await _unitOfWork.CompleteAsync();
 
             await _activityLogService.LogActivityAsync(
                 "حذف", "عميل", id,
-                $"حذف العميل {buyer.FirstName} {buyer.LastName}",
+                $"حذف العميل {buyer.FirstName} {buyer.LastName}" +
+                (releasedCount > 0 ? $" — تم تحرير {releasedCount} وحدة" : ""),
                 currentUserId,
                 oldValues: oldSnapshot);
 
